@@ -2,11 +2,33 @@
    Piggy Bong Floating Button & Modal Styles
    ============================================ */
 
-/* Floating "Should I Buy This?" Button */
-.piggybong-float-btn {
+/* Draggable Container (holds button + close button) */
+.piggybong-float-container {
   position: fixed !important;
   bottom: 24px !important;
   right: 24px !important;
+  z-index: 999999 !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
+  animation: slideInUp 0.5s ease-out !important;
+}
+
+.piggybong-float-container:hover .piggybong-close-btn {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.piggybong-float-container.dragging {
+  cursor: grabbing !important;
+}
+
+.piggybong-float-container.dragging .piggybong-float-btn {
+  cursor: grabbing !important;
+  box-shadow: 0 8px 30px rgba(93, 44, 238, 0.6) !important;
+}
+
+/* Floating "Should I Buy This?" Button */
+.piggybong-float-btn {
+  position: relative !important;
   z-index: 999999 !important;
 
   /* Piggy Bong Purple Gradient */
@@ -20,7 +42,7 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 15px !important;
   font-weight: 600 !important;
-  cursor: pointer !important;
+  cursor: grab !important;
 
   /* Flex layout for icon + text */
   display: flex !important;
@@ -32,7 +54,6 @@
 
   /* Animation */
   transition: all 0.3s ease !important;
-  animation: slideInUp 0.5s ease-out !important;
 }
 
 /* Logo Icon with White Circle Background */
@@ -68,6 +89,42 @@
 
 .piggybong-float-btn:active {
   transform: translateY(-1px) !important;
+}
+
+/* Close Button (appears on hover) */
+.piggybong-close-btn {
+  position: absolute !important;
+  top: -8px !important;
+  right: -8px !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: #FF4757 !important;
+  color: white !important;
+  border: 2px solid white !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: all 0.2s ease !important;
+  z-index: 1000000 !important;
+  padding: 0 !important;
+}
+
+.piggybong-close-btn:hover {
+  background: #EE2737 !important;
+  transform: scale(1.1) !important;
+  box-shadow: 0 3px 12px rgba(255, 71, 87, 0.6) !important;
+}
+
+.piggybong-close-btn:active {
+  transform: scale(0.95) !important;
 }
 
 @keyframes slideInUp {

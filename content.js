@@ -11,7 +11,12 @@
     return;
   }
 
-  // Create floating button
+  // Create floating button container (for dragging + close button)
+  const floatingContainer = document.createElement('div');
+  floatingContainer.id = 'piggybong-floating-container';
+  floatingContainer.className = 'piggybong-float-container';
+
+  // Create the main button
   const floatingBtn = document.createElement('button');
   floatingBtn.id = 'piggybong-floating-btn';
   floatingBtn.className = 'piggybong-float-btn';
@@ -28,11 +33,117 @@
     <span class="piggybong-btn-text">Should I Buy This?</span>
   `;
 
-  // Add button to page
-  document.body.appendChild(floatingBtn);
+  // Create close button (shows on hover)
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'piggybong-close-btn';
+  closeBtn.innerHTML = '×';
+  closeBtn.setAttribute('aria-label', 'Close Piggy Bong');
+  closeBtn.title = 'Dismiss';
 
-  // Button click handler
-  floatingBtn.addEventListener('click', async () => {
+  // Add both buttons to container
+  floatingContainer.appendChild(floatingBtn);
+  floatingContainer.appendChild(closeBtn);
+
+  // Add container to page
+  document.body.appendChild(floatingContainer);
+
+  // Load saved position or use default
+  const hostname = window.location.hostname;
+  const savedPosition = localStorage.getItem(`piggybong-position-${hostname}`);
+  if (savedPosition) {
+    const pos = JSON.parse(savedPosition);
+    floatingContainer.style.left = pos.left;
+    floatingContainer.style.top = pos.top;
+    floatingContainer.style.right = pos.right;
+  }
+
+  // Dragging logic
+  let isDragging = false;
+  let startX, startY, initialLeft, initialTop;
+
+  floatingBtn.addEventListener('mousedown', (e) => {
+    // Only start drag if not clicking close button
+    if (e.target.closest('.piggybong-close-btn')) return;
+
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+
+    const rect = floatingContainer.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+
+    floatingContainer.style.transition = 'none';
+    floatingContainer.classList.add('dragging');
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+
+    const newLeft = initialLeft + deltaX;
+    const newTop = initialTop + deltaY;
+
+    floatingContainer.style.left = newLeft + 'px';
+    floatingContainer.style.top = newTop + 'px';
+    floatingContainer.style.right = 'auto';
+  });
+
+  document.addEventListener('mouseup', (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+
+    floatingContainer.classList.remove('dragging');
+
+    // Snap to nearest side (left or right)
+    const rect = floatingContainer.getBoundingClientRect();
+    const windowWidth = window.innerWidth;
+    const centerX = rect.left + rect.width / 2;
+
+    floatingContainer.style.transition = 'left 0.3s ease, right 0.3s ease';
+
+    if (centerX < windowWidth / 2) {
+      // Snap to left
+      floatingContainer.style.left = '20px';
+      floatingContainer.style.right = 'auto';
+    } else {
+      // Snap to right
+      floatingContainer.style.right = '20px';
+      floatingContainer.style.left = 'auto';
+    }
+
+    // Keep vertical position
+    floatingContainer.style.top = rect.top + 'px';
+
+    // Save position
+    setTimeout(() => {
+      const finalRect = floatingContainer.getBoundingClientRect();
+      const position = {
+        left: floatingContainer.style.left,
+        right: floatingContainer.style.right,
+        top: floatingContainer.style.top
+      };
+      localStorage.setItem(`piggybong-position-${hostname}`, JSON.stringify(position));
+    }, 300);
+  });
+
+  // Close button handler
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    floatingContainer.style.opacity = '0';
+    floatingContainer.style.transform = 'scale(0.8)';
+    setTimeout(() => {
+      floatingContainer.remove();
+    }, 200);
+  });
+
+  // Button click handler (open modal)
+  floatingBtn.addEventListener('click', async (e) => {
+    if (isDragging || e.target.closest('.piggybong-close-btn')) return;
+
     console.log('Piggy Bong button clicked!');
 
     // Get current page info
