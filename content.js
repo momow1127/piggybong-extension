@@ -154,28 +154,26 @@
     showPiggyBongModal(pageText, pageUrl);
   });
 
-  // Generate cart HTML with items
+  // Generate cart HTML with items (COMPACT VERSION)
   function generateCartHTML(cartData) {
-    const itemsHTML = cartData.items.map(item => `
-      <div class="cart-item-row">
-        ${item.image ? `<img src="${item.image}" alt="${item.name}" class="cart-item-img">` : '<div class="cart-item-img-placeholder">📦</div>'}
-        <div class="cart-item-info">
-          <div class="cart-item-name">${item.name}</div>
-          <div class="cart-item-details">Qty: ${item.quantity} × ${item.price || 'Price N/A'}</div>
-        </div>
+    // Only show first 2 items to save space, show count if more
+    const displayItems = cartData.items.slice(0, 2);
+    const hasMore = cartData.items.length > 2;
+
+    const itemsHTML = displayItems.map(item => `
+      <div class="cart-item-row-compact">
+        <div class="cart-item-name-compact">${item.name}</div>
+        <div class="cart-item-price-compact">${item.quantity}× ${item.price || 'N/A'}</div>
       </div>
     `).join('');
 
     return `
-      <div class="piggybong-product-card">
-        <div class="cart-header">
-          <span class="cart-icon">🛒</span>
-          <span class="cart-title">Your Cart (${cartData.itemCount} ${cartData.itemCount === 1 ? 'item' : 'items'})</span>
-        </div>
-        <div class="cart-items-list">
+      <div class="piggybong-product-card-compact">
+        <div class="cart-items-compact">
           ${itemsHTML}
+          ${hasMore ? `<div class="cart-more">+${cartData.items.length - 2} more item${cartData.items.length - 2 > 1 ? 's' : ''}</div>` : ''}
         </div>
-        ${cartData.total ? `<div class="cart-total">Total: ${cartData.total}</div>` : ''}
+        ${cartData.total ? `<div class="cart-total-compact">${cartData.itemCount} items • ${cartData.total}</div>` : ''}
       </div>
     `;
   }
@@ -213,14 +211,18 @@
     modal.id = 'piggybong-modal';
     modal.className = 'piggybong-modal';
 
+    // Get logo URL
+    const logoUrl = chrome.runtime.getURL('piggybong.png');
+
     modal.innerHTML = `
       <div class="piggybong-modal-overlay"></div>
       <div class="piggybong-modal-content">
         <div class="piggybong-modal-header">
           <div class="piggybong-brand">
+            <img src="${logoUrl}" alt="Piggy Bong" class="piggybong-header-logo">
             <span class="piggybong-brand-name">Piggy Bong</span>
           </div>
-          <button class="piggybong-close-btn" aria-label="Close">×</button>
+          <button class="piggybong-modal-close-btn" aria-label="Close">×</button>
         </div>
 
         <div class="piggybong-modal-body">
@@ -240,7 +242,7 @@
     document.body.appendChild(modal);
 
     // Close button handler
-    const closeBtn = modal.querySelector('.piggybong-close-btn');
+    const closeBtn = modal.querySelector('.piggybong-modal-close-btn');
     const overlay = modal.querySelector('.piggybong-modal-overlay');
 
     const closeModal = () => {
@@ -579,44 +581,9 @@
       };
     }
 
-    // Fallback: Simple cart summary without detailed items
-    console.log('🐷 Falling back to cart summary mode');
-
-    // Count how many quantity inputs exist (indicates cart items)
-    const qtyInputs = document.querySelectorAll('input[type="number"]');
-    const itemCount = qtyInputs.length || 1;
-
-    // Get first meaningful price as reference
-    const pricePatterns = [
-      /\$[\d,]+\.?\d*/,
-      /[\d,]+\s*USD/i,
-      /₩[\d,]+/,
-      /[\d,]+\s*KRW/i,
-      /€[\d,]+\.?\d*/,
-      /£[\d,]+\.?\d*/
-    ];
-
-    let referencePrice = 'Price not shown';
-    for (const pattern of pricePatterns) {
-      const match = pageText.match(pattern);
-      if (match) {
-        referencePrice = match[0];
-        break;
-      }
-    }
-
-    // Return simplified cart summary
-    return {
-      isCart: true,
-      itemCount: itemCount,
-      items: [{
-        name: `${itemCount} item${itemCount > 1 ? 's' : ''} in cart`,
-        price: referencePrice,
-        quantity: itemCount.toString(),
-        image: ''
-      }],
-      total: total || numericPrices.length > 0 ? Math.max(...numericPrices).toFixed(2) : 'Calculating...'
-    };
+    // If no items found, return null instead of mock data
+    console.log('🐷 No cart items found - returning null');
+    return null;
   }
 
   // Show fallback UI
