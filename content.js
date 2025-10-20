@@ -408,25 +408,42 @@
         });
       });
 
-      // Get cart total - look for largest price on page (without $ symbol)
+      // Get cart total - look for specific total element on ktown4u
       let total = '';
-      const pageText = document.body.innerText;
 
-      // Match prices in formats: "USD 84.39", "84.39 USD", or just "84.39"
-      const allPrices = pageText.match(/(?:USD\s*)?[\d,]+\.?\d+(?:\s*USD)?/gi) || [];
-      console.log('🐷 All price-like numbers found:', allPrices.slice(0, 10)); // Show first 10
+      // Strategy 1: Look for elements with "total" in class/id (most reliable)
+      const totalElements = document.querySelectorAll('[class*="total"], [id*="total"], [class*="Total"], [id*="Total"]');
+      console.log(`🐷 Found ${totalElements.length} elements with 'total' in class/id`);
 
-      if (allPrices.length > 0) {
-        // Extract just the numeric values
-        const numericPrices = allPrices.map(p => {
-          const numStr = p.replace(/[^\d.]/g, ''); // Remove everything except digits and dots
-          return parseFloat(numStr);
-        }).filter(n => !isNaN(n) && n > 0);
+      for (const el of totalElements) {
+        const text = el.innerText || el.textContent || '';
+        // Look for USD price in total element
+        const priceMatch = text.match(/USD\s*([\d,]+\.?\d*)/i);
+        if (priceMatch) {
+          const priceNum = parseFloat(priceMatch[1].replace(/,/g, ''));
+          // Cart total should be greater than individual items
+          if (priceNum > 10) {
+            total = `USD ${priceNum.toFixed(2)}`;
+            console.log(`🐷 Found cart total in element with class="${el.className}": ${total}`);
+            break;
+          }
+        }
+      }
 
-        if (numericPrices.length > 0) {
-          const maxPrice = Math.max(...numericPrices);
-          total = `USD ${maxPrice.toFixed(2)}`;
-          console.log(`🐷 Cart total (largest price): ${total}`);
+      // Strategy 2: If no total element found, sum up the individual item prices
+      if (!total && items.length > 0) {
+        let sum = 0;
+        items.forEach(item => {
+          const priceMatch = item.price.match(/([\d,]+\.?\d*)/);
+          if (priceMatch) {
+            const itemPrice = parseFloat(priceMatch[1].replace(/,/g, ''));
+            const qty = parseInt(item.quantity) || 1;
+            sum += itemPrice * qty;
+          }
+        });
+        if (sum > 0) {
+          total = `USD ${sum.toFixed(2)}`;
+          console.log(`🐷 Calculated cart total by summing items: ${total}`);
         }
       }
 
