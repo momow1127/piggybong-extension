@@ -25,8 +25,11 @@
   // Get extension URL for logo
   const logoUrl = chrome.runtime.getURL('piggybong.png');
 
-  // Add logo and text
+  // Add drag handle, logo, and text
   floatingBtn.innerHTML = `
+    <div class="piggybong-drag-handle">
+      <div class="drag-dots"></div>
+    </div>
     <div class="piggybong-btn-icon">
       <img src="${logoUrl}" alt="Piggy Bong" />
     </div>

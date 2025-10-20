@@ -55,7 +55,7 @@
   color: white !important;
 
   /* Tab styling - rounded on left, flat on right (attached to edge) */
-  padding: 14px 8px 14px 18px !important;
+  padding: 14px 8px 14px 4px !important;
   border: none !important;
   border-radius: 50px 0 0 50px !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
@@ -63,10 +63,10 @@
   font-weight: 600 !important;
   cursor: grab !important;
 
-  /* Flex layout for icon + text */
+  /* Flex layout for drag handle + icon + text */
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
 
   /* Shadow on left side only (appears to come from browser) */
   box-shadow: -4px 4px 20px rgba(93, 44, 238, 0.5) !important;
@@ -76,6 +76,35 @@
 
   /* Border on left to emphasize browser attachment */
   border-left: 3px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Drag Handle (shows on hover) */
+.piggybong-drag-handle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 6px 0 8px !important;
+  cursor: grab !important;
+  opacity: 0 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.piggybong-float-container:hover .piggybong-drag-handle {
+  opacity: 1 !important;
+}
+
+.piggybong-float-container.dragging .piggybong-drag-handle {
+  cursor: grabbing !important;
+}
+
+/* Drag dots pattern (6 dots in 2 columns) */
+.drag-dots {
+  width: 12px !important;
+  height: 18px !important;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.7) 2px, transparent 2px) !important;
+  background-size: 6px 6px !important;
+  background-position: 0 0, 0 0 !important;
+  background-repeat: repeat !important;
 }
 
 /* Logo Icon with White Circle Background */
