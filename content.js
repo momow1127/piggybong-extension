@@ -228,21 +228,66 @@
 
   // Site-specific: ktown4u.com cart extraction
   function extractKtown4uCart() {
+    console.log('🐷 Piggy Bong: Trying ktown4u cart extraction...');
+    console.log('🐷 Current URL:', window.location.href);
+
     try {
       const items = [];
 
-      // Try cart page selectors
-      const cartItems = document.querySelectorAll('.cart_product_item, .cart-item, [class*="cart_list"] tr');
+      // Try multiple selector patterns for ktown4u
+      const selectorPatterns = [
+        '.cart_product_item',
+        '.cart-item',
+        '[class*="cart_list"] tr',
+        'table.cart tr',
+        '.product-cart tbody tr',
+        '[id*="cart"] tbody tr'
+      ];
+
+      let cartItems = [];
+      for (const selector of selectorPatterns) {
+        const found = document.querySelectorAll(selector);
+        console.log(`🐷 Trying selector "${selector}": found ${found.length} items`);
+        if (found.length > 0) {
+          cartItems = found;
+          break;
+        }
+      }
 
       if (cartItems.length > 0) {
+        console.log(`🐷 Found ${cartItems.length} cart items!`);
         cartItems.forEach((item, index) => {
           if (index > 2) return; // Max 3 items
 
           const img = item.querySelector('img');
-          const name = item.querySelector('.product_name, .goods_name, td a')?.textContent?.trim() || 'K-pop Item';
-          const qty = item.querySelector('input[type="number"], .qty, .quantity')?.value || '1';
-          const priceEl = item.querySelector('.price, [class*="price"]');
-          const price = priceEl?.textContent?.trim() || '';
+
+          // Try multiple name selectors
+          const nameSelectors = ['.product_name', '.goods_name', 'td a', 'a', 'h3', '.name'];
+          let name = 'K-pop Item';
+          for (const sel of nameSelectors) {
+            const nameEl = item.querySelector(sel);
+            if (nameEl && nameEl.textContent.trim()) {
+              name = nameEl.textContent.trim();
+              break;
+            }
+          }
+
+          // Try multiple quantity selectors
+          const qtyEl = item.querySelector('input[type="number"], .qty, .quantity, [class*="qty"]');
+          const qty = qtyEl?.value || qtyEl?.textContent?.trim() || '1';
+
+          // Try multiple price selectors
+          const priceSelectors = ['.price', '[class*="price"]', 'td.price', '.amount'];
+          let price = '';
+          for (const sel of priceSelectors) {
+            const priceEl = item.querySelector(sel);
+            if (priceEl && priceEl.textContent.trim()) {
+              price = priceEl.textContent.trim();
+              break;
+            }
+          }
+
+          console.log(`🐷 Item ${index + 1}:`, { name: name.substring(0, 30), price, qty, hasImg: !!img });
 
           items.push({
             name: name.substring(0, 60),
@@ -253,21 +298,44 @@
         });
       }
 
-      // Get cart total
-      const totalEl = document.querySelector('.total_price, .cart_total, [class*="total"]');
-      const total = totalEl?.textContent?.match(/\$?[\d,]+\.?\d*/)?.[0] || '';
+      // Get cart total - try multiple selectors
+      const totalSelectors = [
+        '.total_price',
+        '.cart_total',
+        '[class*="total"]',
+        '#total',
+        '.grand-total',
+        '.order-total'
+      ];
+
+      let total = '';
+      for (const selector of totalSelectors) {
+        const totalEl = document.querySelector(selector);
+        if (totalEl) {
+          const match = totalEl.textContent?.match(/\$?[\d,]+\.?\d*/);
+          if (match) {
+            total = match[0];
+            console.log(`🐷 Found total with selector "${selector}":`, total);
+            break;
+          }
+        }
+      }
 
       if (items.length > 0) {
+        console.log('🐷 SUCCESS! Extracted cart data:', { itemCount: items.length, total });
         return {
           isCart: true,
           items: items,
-          total: total,
+          total: total || 'Total not found',
           itemCount: items.length
         };
+      } else {
+        console.log('🐷 No items found, returning null');
       }
     } catch (error) {
-      console.error('Ktown4u extraction failed:', error);
+      console.error('🐷 Ktown4u extraction failed:', error);
     }
+    console.log('🐷 Ktown4u extraction returning null - will use fallback');
     return null;
   }
 
