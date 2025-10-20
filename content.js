@@ -244,7 +244,7 @@
     return result;
   }
 
-  // Site-specific: ktown4u.com cart extraction
+  // Site-specific: ktown4u.com cart extraction (modern Tailwind CSS site)
   function extractKtown4uCart() {
     console.log('🐷 Piggy Bong: Trying ktown4u cart extraction...');
     console.log('🐷 Current URL:', window.location.href);
@@ -252,91 +252,74 @@
     try {
       const items = [];
 
-      // Try multiple selector patterns for ktown4u
-      const selectorPatterns = [
-        '.cart_product_item',
-        '.cart-item',
-        '[class*="cart_list"] tr',
-        'table.cart tr',
-        '.product-cart tbody tr',
-        '[id*="cart"] tbody tr'
-      ];
+      // ktown4u uses Tailwind CSS with font-bold for artist names
+      // Look for product names with font-bold pattern
+      const boldElements = document.querySelectorAll('span.font-bold, .font-bold');
+      console.log(`🐷 Found ${boldElements.length} bold elements (potential cart items)`);
 
-      let cartItems = [];
-      for (const selector of selectorPatterns) {
-        const found = document.querySelectorAll(selector);
-        console.log(`🐷 Trying selector "${selector}": found ${found.length} items`);
-        if (found.length > 0) {
-          cartItems = found;
-          break;
+      // Group consecutive bold + block spans as cart items
+      boldElements.forEach((boldEl, index) => {
+        if (index >= 3) return; // Max 3 items
+
+        // Get artist name from bold span
+        const artist = boldEl.textContent.trim();
+
+        // Get product description from next sibling (block span)
+        const nextSpan = boldEl.parentElement.querySelector('span.block');
+        const description = nextSpan ? nextSpan.textContent.trim() : '';
+
+        const fullName = artist && description ? `${artist} - ${description}` : artist || description;
+
+        if (!fullName || fullName.length < 3) return;
+
+        // Try to find price near this item (look in parent or nearby elements)
+        let price = '';
+        let priceEl = boldEl.closest('div')?.querySelector('[class*="price"], [class*="USD"], [class*="KRW"]');
+        if (!priceEl) {
+          // Search parent container for price
+          const container = boldEl.closest('div[class*="flex"]')?.parentElement;
+          const allText = container?.innerText || '';
+          const priceMatch = allText.match(/\$[\d,]+\.?\d*|[\d,]+\s*USD|₩[\d,]+/);
+          if (priceMatch) price = priceMatch[0];
+        } else {
+          price = priceEl.textContent.trim();
         }
-      }
 
-      if (cartItems.length > 0) {
-        console.log(`🐷 Found ${cartItems.length} cart items!`);
-        cartItems.forEach((item, index) => {
-          if (index > 2) return; // Max 3 items
+        // Try to find image
+        const img = boldEl.closest('div[class*="flex"]')?.querySelector('img');
 
-          const img = item.querySelector('img');
+        // Try to find quantity
+        let qty = '1';
+        const qtyInput = boldEl.closest('div')?.parentElement?.querySelector('input[type="number"]');
+        if (qtyInput) qty = qtyInput.value || '1';
 
-          // Try multiple name selectors
-          const nameSelectors = ['.product_name', '.goods_name', 'td a', 'a', 'h3', '.name'];
-          let name = 'K-pop Item';
-          for (const sel of nameSelectors) {
-            const nameEl = item.querySelector(sel);
-            if (nameEl && nameEl.textContent.trim()) {
-              name = nameEl.textContent.trim();
-              break;
-            }
-          }
-
-          // Try multiple quantity selectors
-          const qtyEl = item.querySelector('input[type="number"], .qty, .quantity, [class*="qty"]');
-          const qty = qtyEl?.value || qtyEl?.textContent?.trim() || '1';
-
-          // Try multiple price selectors
-          const priceSelectors = ['.price', '[class*="price"]', 'td.price', '.amount'];
-          let price = '';
-          for (const sel of priceSelectors) {
-            const priceEl = item.querySelector(sel);
-            if (priceEl && priceEl.textContent.trim()) {
-              price = priceEl.textContent.trim();
-              break;
-            }
-          }
-
-          console.log(`🐷 Item ${index + 1}:`, { name: name.substring(0, 30), price, qty, hasImg: !!img });
-
-          items.push({
-            name: name.substring(0, 60),
-            price: price,
-            quantity: qty,
-            image: img?.src || ''
-          });
+        console.log(`🐷 Item ${index + 1}:`, {
+          name: fullName.substring(0, 40),
+          price: price || 'not found',
+          qty,
+          hasImg: !!img
         });
-      }
 
-      // Get cart total - try multiple selectors
-      const totalSelectors = [
-        '.total_price',
-        '.cart_total',
-        '[class*="total"]',
-        '#total',
-        '.grand-total',
-        '.order-total'
-      ];
+        items.push({
+          name: fullName.substring(0, 80),
+          price: price || 'Price N/A',
+          quantity: qty,
+          image: img?.src || ''
+        });
+      });
 
+      // Get cart total by searching page text for largest price
       let total = '';
-      for (const selector of totalSelectors) {
-        const totalEl = document.querySelector(selector);
-        if (totalEl) {
-          const match = totalEl.textContent?.match(/\$?[\d,]+\.?\d*/);
-          if (match) {
-            total = match[0];
-            console.log(`🐷 Found total with selector "${selector}":`, total);
-            break;
-          }
-        }
+      const pageText = document.body.innerText;
+      const allPrices = pageText.match(/\$[\d,]+\.?\d+/g) || [];
+      console.log('🐷 All prices found on page:', allPrices);
+
+      // Cart total is usually the largest price on the page
+      if (allPrices.length > 0) {
+        const numericPrices = allPrices.map(p => parseFloat(p.replace(/[$,]/g, '')));
+        const maxPrice = Math.max(...numericPrices);
+        total = `$${maxPrice.toFixed(2)}`;
+        console.log(`🐷 Cart total (largest price): ${total}`);
       }
 
       if (items.length > 0) {
