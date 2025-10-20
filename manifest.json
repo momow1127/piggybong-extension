@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Piggy Bong: Fan Priority Check",
+  "version": "1.0.1",
+  "description": "A K-pop companion for thoughtful collection decisions.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "piggybong.png"
+  },
+  "icons": {
+    "16": "piggybong.png",
+    "48": "piggybong.png",
+    "128": "piggybong.png"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.ktown4u.com/*",
+        "*://*.weverse.io/*",
+        "*://*.cokodive.com/*",
+        "*://*.musicplaza.com/*",
+        "*://*.yesasia.com/*",
+        "*://*.kpoptown.com/*",
+        "*://*.kpopmart.com/*",
+        "*://*.choicemusicla.com/*",
+        "*://*.subkshop.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["floating-button.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["piggybong.png", "modal.html", "modal.js", "modal.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
