@@ -78,7 +78,7 @@
   border-left: 3px solid rgba(255, 255, 255, 0.3) !important;
 }
 
-/* Drag Handle (shows on hover) */
+/* Drag Handle (shows ONLY on hover) */
 .piggybong-drag-handle {
   display: flex !important;
   align-items: center !important;
@@ -86,14 +86,27 @@
   padding: 0 6px 0 8px !important;
   cursor: grab !important;
   opacity: 0 !important;
-  transition: opacity 0.2s ease !important;
+  transition: opacity 0.25s ease !important;
+  pointer-events: auto !important;
 }
 
+/* Show drag handle when hovering over the CONTAINER (button + close) */
 .piggybong-float-container:hover .piggybong-drag-handle {
   opacity: 1 !important;
 }
 
+/* Hide drag handle when mouse leaves container */
+.piggybong-float-container:not(:hover) .piggybong-drag-handle {
+  opacity: 0 !important;
+}
+
+/* Change cursor when actively dragging */
 .piggybong-float-container.dragging .piggybong-drag-handle {
+  cursor: grabbing !important;
+  opacity: 1 !important;
+}
+
+.piggybong-float-container.dragging {
   cursor: grabbing !important;
 }
 

@@ -60,15 +60,21 @@
     floatingContainer.style.right = pos.right;
   }
 
-  // Dragging logic
+  // Dragging logic - ONLY works on drag handle
   let isDragging = false;
+  let dragStarted = false;
   let startX, startY, initialLeft, initialTop;
 
-  floatingBtn.addEventListener('mousedown', (e) => {
-    // Only start drag if not clicking close button
+  // Only drag handle can initiate dragging
+  floatingContainer.addEventListener('mousedown', (e) => {
+    // Only start drag if clicking on the drag handle
+    if (!e.target.closest('.piggybong-drag-handle')) return;
+
+    // Don't drag if clicking close button
     if (e.target.closest('.piggybong-close-btn')) return;
 
     isDragging = true;
+    dragStarted = false; // Track if actual drag movement happened
     startX = e.clientX;
     startY = e.clientY;
 
@@ -79,6 +85,7 @@
     floatingContainer.style.transition = 'none';
     floatingContainer.classList.add('dragging');
     e.preventDefault();
+    e.stopPropagation();
   });
 
   document.addEventListener('mousemove', (e) => {
@@ -86,6 +93,11 @@
 
     const deltaX = e.clientX - startX;
     const deltaY = e.clientY - startY;
+
+    // If movement detected, mark as dragging (prevents click event)
+    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+      dragStarted = true;
+    }
 
     const newLeft = initialLeft + deltaX;
     const newTop = initialTop + deltaY;
@@ -143,9 +155,17 @@
     }, 200);
   });
 
-  // Button click handler (open modal)
+  // Button click handler (open modal) - doesn't work on drag handle
   floatingBtn.addEventListener('click', async (e) => {
-    if (isDragging || e.target.closest('.piggybong-close-btn')) return;
+    // Don't open modal if clicking drag handle or close button
+    if (e.target.closest('.piggybong-drag-handle')) return;
+    if (e.target.closest('.piggybong-close-btn')) return;
+
+    // Don't open modal if user was dragging
+    if (dragStarted) {
+      dragStarted = false;
+      return;
+    }
 
     console.log('Piggy Bong button clicked!');
 
