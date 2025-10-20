@@ -51,6 +51,9 @@
       existingModal.remove();
     }
 
+    // Extract product info immediately
+    const productInfo = extractProductInfo(pageText);
+
     // Create modal overlay
     const modal = document.createElement('div');
     modal.id = 'piggybong-modal';
@@ -67,9 +70,19 @@
         </div>
 
         <div class="piggybong-modal-body">
+          <!-- Show product card immediately -->
+          <div class="piggybong-product-card">
+            <div class="product-info">
+              <h2 class="product-name">${productInfo.name}</h2>
+              <p class="product-price">${productInfo.price}</p>
+            </div>
+          </div>
+
+          <!-- Loading state for AI analysis -->
           <div class="piggybong-loading">
             <div class="piggybong-spinner"></div>
-            <p>Analyzing your priorities...</p>
+            <p>🤖 AI is analyzing your collection alignment...</p>
+            <p style="font-size: 12px; color: #999; margin-top: 8px;">This takes 3-5 seconds using on-device AI</p>
           </div>
         </div>
       </div>
@@ -92,30 +105,26 @@
     // Trigger animation
     setTimeout(() => modal.classList.add('show'), 10);
 
-    // Run AI analysis
-    runAIAnalysis(pageText, pageUrl);
+    // Run AI analysis (product card already shown)
+    runAIAnalysis(pageText, pageUrl, productInfo);
   }
 
   // Function to run AI analysis
-  async function runAIAnalysis(pageText, pageUrl) {
+  async function runAIAnalysis(pageText, pageUrl, productInfo) {
     const modalBody = document.querySelector('.piggybong-modal-body');
 
     try {
-      // Extract product info from page
-      const productInfo = extractProductInfo(pageText);
-
-      // Get AI analysis
+      // Get AI analysis (product info already extracted)
       const aiResult = await analyzeWithAI(pageText, pageUrl, productInfo);
 
-      // Display Phia-style results
-      modalBody.innerHTML = `
-        <!-- Product Card -->
-        <div class="piggybong-product-card">
-          <div class="product-info">
-            <h2 class="product-name">${productInfo.name}</h2>
-            <p class="product-price">${productInfo.price}</p>
-          </div>
-        </div>
+      // Remove loading indicator, keep product card, add AI results
+      const loadingDiv = modalBody.querySelector('.piggybong-loading');
+      if (loadingDiv) {
+        loadingDiv.remove();
+      }
+
+      // Add AI analysis results below product card
+      const analysisHTML = `
 
         <!-- Priority Assessment (like Phia's price comparison) -->
         <div class="piggybong-assessment-card">
@@ -157,6 +166,9 @@
           </div>
         </div>
       `;
+
+      // Insert AI results after product card
+      modalBody.insertAdjacentHTML('beforeend', analysisHTML);
     } catch (error) {
       console.error('AI analysis failed:', error);
       showFallback(modalBody);
