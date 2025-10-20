@@ -294,9 +294,14 @@
   async function runAIAnalysis(pageText, pageUrl, productInfo) {
     const modalBody = document.querySelector('.piggybong-modal-body');
 
+    console.log('🐷 runAIAnalysis() called');
+    console.log('🐷 productInfo:', productInfo);
+
     try {
       // Get AI analysis (product info already extracted)
+      console.log('🐷 Calling analyzeWithAI...');
       const aiResult = await analyzeWithAI(pageText, pageUrl, productInfo);
+      console.log('🐷 AI Result:', aiResult);
 
       // Remove loading indicator, keep product card, add AI results
       const loadingDiv = modalBody.querySelector('.piggybong-loading');
@@ -352,7 +357,9 @@
       // Insert AI results after product card
       modalBody.insertAdjacentHTML('beforeend', analysisHTML);
     } catch (error) {
-      console.error('AI analysis failed:', error);
+      console.error('🐷 ❌ AI analysis failed:', error);
+      console.error('🐷 Error details:', error.message);
+      console.error('🐷 Error stack:', error.stack);
       showFallback(modalBody);
     }
   }
@@ -670,12 +677,19 @@
 
   // AI Analysis function - returns structured data for Phia-style UI
   async function analyzeWithAI(pageText, pageUrl, productInfo) {
+    console.log('🐷 analyzeWithAI() START');
+
     // Check if LanguageModel API is available
-    if (!window.LanguageModel) {
-      throw new Error('AI not available');
+    console.log('🐷 Checking window.ai:', window.ai);
+    console.log('🐷 Checking window.ai.languageModel:', window.ai?.languageModel);
+
+    if (!window.ai || !window.ai.languageModel) {
+      console.error('🐷 ❌ Chrome Built-in AI not available!');
+      throw new Error('AI not available - Chrome Built-in AI (Gemini Nano) not enabled');
     }
 
     try {
+      console.log('🐷 Creating AI session...');
       const systemPrompt = `You are Piggy Bong 🐷, a warm, insightful K-pop companion that helps fans make thoughtful collection decisions.
 
 Analyze shopping cart or product page and produce contextual emotional value check.
@@ -707,7 +721,8 @@ EXAMPLES OF GOOD REFLECTION (QUESTIONS, NOT ADVICE):
 - "Do you need all versions, or is completeness calling louder than your collection heart?"
 - "Will future-you treasure this, or is present-you just feeling FOMO?"`;
 
-      const session = await window.LanguageModel.create({ systemPrompt });
+      const session = await window.ai.languageModel.create({ systemPrompt });
+      console.log('🐷 AI session created:', session);
 
       // Build detailed prompt based on cart or single product
       let prompt = '';
@@ -732,7 +747,9 @@ Page: ${pageUrl}
 Analyze this purchase decision. Return JSON only.`;
       }
 
+      console.log('🐷 Sending prompt to AI:', prompt);
       const result = await session.prompt(prompt);
+      console.log('🐷 AI raw response:', result);
 
       // Parse AI response
       const jsonMatch = result.match(/\{[\s\S]*\}/);
