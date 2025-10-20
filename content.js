@@ -43,6 +43,44 @@
     showPiggyBongModal(pageText, pageUrl);
   });
 
+  // Generate cart HTML with items
+  function generateCartHTML(cartData) {
+    const itemsHTML = cartData.items.map(item => `
+      <div class="cart-item-row">
+        ${item.image ? `<img src="${item.image}" alt="${item.name}" class="cart-item-img">` : '<div class="cart-item-img-placeholder">📦</div>'}
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-details">Qty: ${item.quantity} × ${item.price || 'Price N/A'}</div>
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="piggybong-product-card">
+        <div class="cart-header">
+          <span class="cart-icon">🛒</span>
+          <span class="cart-title">Your Cart (${cartData.itemCount} ${cartData.itemCount === 1 ? 'item' : 'items'})</span>
+        </div>
+        <div class="cart-items-list">
+          ${itemsHTML}
+        </div>
+        ${cartData.total ? `<div class="cart-total">Total: ${cartData.total}</div>` : ''}
+      </div>
+    `;
+  }
+
+  // Generate single product HTML
+  function generateProductHTML(productData) {
+    return `
+      <div class="piggybong-product-card">
+        <div class="product-info">
+          <h2 class="product-name">${productData.name}</h2>
+          <p class="product-price">${productData.price}</p>
+        </div>
+      </div>
+    `;
+  }
+
   // Function to show modal
   function showPiggyBongModal(pageText, pageUrl) {
     // Remove existing modal if any
@@ -70,13 +108,8 @@
         </div>
 
         <div class="piggybong-modal-body">
-          <!-- Show product card immediately -->
-          <div class="piggybong-product-card">
-            <div class="product-info">
-              <h2 class="product-name">${productInfo.name}</h2>
-              <p class="product-price">${productInfo.price}</p>
-            </div>
-          </div>
+          <!-- Show cart or product card immediately -->
+          ${productInfo.isCart ? generateCartHTML(productInfo) : generateProductHTML(productInfo)}
 
           <!-- Loading state for AI analysis -->
           <div class="piggybong-loading">
@@ -133,15 +166,16 @@
             <span class="assessment-title">Priority Assessment</span>
           </div>
 
-          <!-- Visual meter -->
+          <!-- Visual meter with emoji labels -->
           <div class="priority-meter">
             <div class="meter-bar">
               <div class="meter-fill" style="width: ${aiResult.priorityLevel}%"></div>
               <div class="meter-indicator" style="left: ${aiResult.priorityLevel}%"></div>
             </div>
             <div class="meter-labels">
-              <span>Collection Goal</span>
-              <span>FOMO Buy</span>
+              <span>💜 Treasure</span>
+              <span>🧡 Consider</span>
+              <span>❤️ FOMO</span>
             </div>
           </div>
 
@@ -175,12 +209,167 @@
     }
   }
 
-  // Extract product info from page
+  // Extract cart/product info from page (Hybrid approach)
   function extractProductInfo(pageText) {
-    // Try multiple price formats (USD, KRW, EUR, etc.)
-    let price = 'Price not found';
+    const hostname = window.location.hostname;
 
-    // Try finding price with various currency symbols and formats
+    // Try site-specific extractors first
+    if (hostname.includes('ktown4u')) {
+      const cartData = extractKtown4uCart();
+      if (cartData) return cartData;
+    } else if (hostname.includes('weverse')) {
+      const cartData = extractWeverseCart();
+      if (cartData) return cartData;
+    }
+
+    // Fallback to generic extraction
+    return extractGenericCart(pageText);
+  }
+
+  // Site-specific: ktown4u.com cart extraction
+  function extractKtown4uCart() {
+    try {
+      const items = [];
+
+      // Try cart page selectors
+      const cartItems = document.querySelectorAll('.cart_product_item, .cart-item, [class*="cart_list"] tr');
+
+      if (cartItems.length > 0) {
+        cartItems.forEach((item, index) => {
+          if (index > 2) return; // Max 3 items
+
+          const img = item.querySelector('img');
+          const name = item.querySelector('.product_name, .goods_name, td a')?.textContent?.trim() || 'K-pop Item';
+          const qty = item.querySelector('input[type="number"], .qty, .quantity')?.value || '1';
+          const priceEl = item.querySelector('.price, [class*="price"]');
+          const price = priceEl?.textContent?.trim() || '';
+
+          items.push({
+            name: name.substring(0, 60),
+            price: price,
+            quantity: qty,
+            image: img?.src || ''
+          });
+        });
+      }
+
+      // Get cart total
+      const totalEl = document.querySelector('.total_price, .cart_total, [class*="total"]');
+      const total = totalEl?.textContent?.match(/\$?[\d,]+\.?\d*/)?.[0] || '';
+
+      if (items.length > 0) {
+        return {
+          isCart: true,
+          items: items,
+          total: total,
+          itemCount: items.length
+        };
+      }
+    } catch (error) {
+      console.error('Ktown4u extraction failed:', error);
+    }
+    return null;
+  }
+
+  // Site-specific: weverse.io cart extraction
+  function extractWeverseCart() {
+    try {
+      const items = [];
+      const cartItems = document.querySelectorAll('[class*="CartItem"], [class*="cart-item"]');
+
+      if (cartItems.length > 0) {
+        cartItems.forEach((item, index) => {
+          if (index > 2) return;
+
+          const img = item.querySelector('img');
+          const name = item.querySelector('h3, [class*="name"]')?.textContent?.trim() || 'K-pop Item';
+          const qty = item.querySelector('[class*="quantity"]')?.textContent?.trim() || '1';
+          const price = item.querySelector('[class*="price"]')?.textContent?.trim() || '';
+
+          items.push({
+            name: name.substring(0, 60),
+            price: price,
+            quantity: qty,
+            image: img?.src || ''
+          });
+        });
+
+        const totalEl = document.querySelector('[class*="total"]');
+        const total = totalEl?.textContent?.match(/[₩\$]?[\d,]+\.?\d*/)?.[0] || '';
+
+        return {
+          isCart: true,
+          items: items,
+          total: total,
+          itemCount: items.length
+        };
+      }
+    } catch (error) {
+      console.error('Weverse extraction failed:', error);
+    }
+    return null;
+  }
+
+  // Generic cart/product extraction (fallback)
+  function extractGenericCart(pageText) {
+    // Try to detect cart items with common patterns
+    const cartSelectors = [
+      '.cart-item', '.basket-item', '.checkout-item',
+      '[class*="cart-product"]', '[class*="cart_item"]',
+      '[class*="CartItem"]', 'tr[class*="cart"]'
+    ];
+
+    let items = [];
+    for (const selector of cartSelectors) {
+      const elements = document.querySelectorAll(selector);
+      if (elements.length > 0) {
+        elements.forEach((el, index) => {
+          if (index > 2) return; // Max 3 items
+
+          const img = el.querySelector('img');
+          const nameEl = el.querySelector('h2, h3, h4, .name, [class*="name"], a');
+          const qtyEl = el.querySelector('input[type="number"], .qty, .quantity, [class*="quantity"]');
+          const priceEl = el.querySelector('.price, [class*="price"]');
+
+          if (nameEl) {
+            items.push({
+              name: nameEl.textContent?.trim().substring(0, 60) || 'K-pop Item',
+              price: priceEl?.textContent?.trim() || '',
+              quantity: qtyEl?.value || qtyEl?.textContent?.trim() || '1',
+              image: img?.src || ''
+            });
+          }
+        });
+
+        if (items.length > 0) break;
+      }
+    }
+
+    // If cart items found, get total
+    if (items.length > 0) {
+      const totalSelectors = ['.total', '.cart-total', '[class*="total"]', '[class*="Total"]'];
+      let total = '';
+
+      for (const selector of totalSelectors) {
+        const totalEl = document.querySelector(selector);
+        if (totalEl) {
+          const match = totalEl.textContent?.match(/[\$₩€£]?[\d,]+\.?\d*/);
+          if (match) {
+            total = match[0];
+            break;
+          }
+        }
+      }
+
+      return {
+        isCart: true,
+        items: items,
+        total: total || 'Total not found',
+        itemCount: items.length
+      };
+    }
+
+    // Fallback: single product page
     const pricePatterns = [
       /\$[\d,]+\.?\d*/,              // $29.99
       /[\d,]+\s*USD/i,               // 29.99 USD
@@ -191,6 +380,7 @@
       /[\d,]+\.?\d*\s*원/,            // 29900원
     ];
 
+    let price = 'Price not found';
     for (const pattern of pricePatterns) {
       const match = pageText.match(pattern);
       if (match) {
@@ -199,14 +389,14 @@
       }
     }
 
-    // Try to extract product name from meta tags or page title
-    let name = 'K-pop Item';
     const titleMatch = document.title.match(/^[^-|]+/);
-    if (titleMatch) {
-      name = titleMatch[0].trim().substring(0, 60);
-    }
+    const name = titleMatch ? titleMatch[0].trim().substring(0, 60) : 'K-pop Item';
 
-    return { name, price };
+    return {
+      isCart: false,
+      name: name,
+      price: price
+    };
   }
 
   // Show fallback UI
@@ -231,33 +421,61 @@
     }
 
     try {
-      const systemPrompt = `You are Piggy Bong, a K-pop Collection Alignment Specialist. You help fans make mindful collection decisions.
+      const systemPrompt = `You are Piggy Bong 🐷, a warm, insightful K-pop companion that helps fans make thoughtful collection decisions.
 
-RULES:
-1. NEVER use: budget, money, finance, spending, afford, expensive, cheap, cost, save
-2. USE: priority, collection goals, must-haves, commitment, long-term value, top picks
-3. Be warm, supportive, non-judgmental
-4. Analyze if this is a collection goal or FOMO impulse
+Analyze shopping cart or product page and produce contextual emotional value check.
 
 RESPONSE FORMAT (JSON):
 {
-  "priorityLevel": <number 0-100, where 0=perfect collection goal, 100=pure FOMO>,
-  "badgeText": "<short phrase like 'Collection Priority' or 'FOMO Alert'>",
-  "reasoning": "<1 sentence explaining WHY you gave this score - be specific about what made it collection goal vs FOMO>",
-  "reflection": "<2-3 sentences of supportive guidance based on your reasoning>"
+  "priorityLevel": <number 0-100, where 0=treasure/collection goal, 30=moderate, 70=consider carefully, 100=pure FOMO>,
+  "badgeText": "<use these: 'Treasure Item' (0-30), 'Think It Over' (31-70), 'FOMO Alert' (71-100)>",
+  "reasoning": "<1-2 sentences explaining SPECIFIC FACTORS: duplicate items, comeback timing, limited edition, bias relevance, multiple groups in cart, completionist behavior, impulse patterns>",
+  "reflection": "<1 warm QUESTION that encourages self-reflection, NOT advice. Use fan language: bias, comeback, photocard, lightstick, collection goals. Examples: 'Is this your bias, or comeback hype?' or 'Does this fit your collection focus, or are you chasing completeness?'>"
 }
 
-IMPORTANT: In "reasoning", clearly explain WHAT FACTORS led to your priority score. For example:
-- "This appears to be a limited edition photocard from your bias, which aligns with focused collecting"
-- "This seems like a random impulse triggered by seeing others buy it"
-- "Multiple versions of the same album may indicate completionist FOMO rather than genuine collection need"`;
+RULES:
+1. NEVER use: budget, money, finance, spending, afford, expensive, cheap, cost, save
+2. USE fan-language: bias, comeback, photocard, lightstick, limited edition, collection goals, must-haves, FOMO
+3. In "reasoning": BE SPECIFIC about what you see (duplicates? multiple groups? limited edition? comeback timing?)
+4. In "reflection": ASK A QUESTION, don't lecture. Be a supportive friend.
+5. Tone = warm, fun, non-judgmental
+
+EXAMPLES OF GOOD REASONING:
+- "Multiple items from different groups (BTS + NewJeans) suggests browsing rather than focused collecting"
+- "This appears to be a limited lightstick from your bias group, which aligns with collection goals"
+- "Buying 3 versions of the same album may indicate completionist FOMO"
+- "Random photocard bundles often lead to duplicates and storage overwhelm"
+
+EXAMPLES OF GOOD REFLECTION (QUESTIONS, NOT ADVICE):
+- "Are both groups your biases, or is one an impulse add?"
+- "Is this comeback special to you, or are you caught in the hype?"
+- "Do you need all versions, or is completeness calling louder than your collection heart?"
+- "Will future-you treasure this, or is present-you just feeling FOMO?"`;
 
       const session = await window.LanguageModel.create({ systemPrompt });
-      const prompt = `Product: ${productInfo.name}
+
+      // Build detailed prompt based on cart or single product
+      let prompt = '';
+      if (productInfo.isCart && productInfo.items) {
+        const itemsList = productInfo.items.map((item, i) =>
+          `Item ${i+1}: ${item.name} (Qty: ${item.quantity}, Price: ${item.price})`
+        ).join('\n');
+
+        prompt = `CART ANALYSIS
+${itemsList}
+Total: ${productInfo.total}
+Total Items: ${productInfo.itemCount}
+Page: ${pageUrl}
+
+Analyze this cart for FOMO patterns. Return JSON only.`;
+      } else {
+        prompt = `PRODUCT ANALYSIS
+Product: ${productInfo.name}
 Price: ${productInfo.price}
 Page: ${pageUrl}
 
-Analyze this K-pop purchase. Return JSON only.`;
+Analyze this purchase decision. Return JSON only.`;
+      }
 
       const result = await session.prompt(prompt);
 
@@ -266,17 +484,18 @@ Analyze this K-pop purchase. Return JSON only.`;
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
 
-        // Determine badge class based on priority level
+        // Determine badge class based on new priority scale
+        // 0-30: Treasure (green), 31-70: Think It Over (yellow), 71-100: FOMO (red)
         let badgeClass = 'badge-good';
-        if (parsed.priorityLevel > 70) badgeClass = 'badge-warning';
-        if (parsed.priorityLevel > 85) badgeClass = 'badge-alert';
+        if (parsed.priorityLevel > 30) badgeClass = 'badge-warning';
+        if (parsed.priorityLevel > 70) badgeClass = 'badge-alert';
 
         return {
           priorityLevel: parsed.priorityLevel || 50,
-          badgeText: parsed.badgeText || 'Consider Carefully',
+          badgeText: parsed.badgeText || 'Think It Over',
           badgeClass: badgeClass,
-          reasoning: parsed.reasoning || 'Analyzing your collection alignment...',
-          reflection: parsed.reflection || 'Take a moment to reflect on your collection goals.'
+          reasoning: parsed.reasoning || 'Analyzing your collection patterns...',
+          reflection: parsed.reflection || 'Does this align with your collection goals?'
         };
       }
 
