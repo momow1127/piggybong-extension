@@ -451,6 +451,11 @@
   text-align: right !important;
 }
 
+.cart-total-estimated {
+  color: #FF9500 !important;
+  font-style: italic !important;
+}
+
 /* Old Cart Display Styles (keep for backwards compatibility) */
 .cart-header {
   display: flex !important;

@@ -170,13 +170,20 @@
       </div>
     `).join('');
 
+    // Check if total is estimated (starts with ~)
+    const isEstimated = cartData.total && cartData.total.startsWith('~');
+    const totalClass = isEstimated ? 'cart-total-compact cart-total-estimated' : 'cart-total-compact';
+    const totalText = isEstimated
+      ? `${cartData.itemCount} items • ${cartData.total} (estimated)`
+      : `${cartData.itemCount} items • ${cartData.total}`;
+
     return `
       <div class="piggybong-product-card-compact">
         <div class="cart-items-compact">
           ${itemsHTML}
           ${hasMore ? `<div class="cart-more">+${cartData.items.length - 2} more item${cartData.items.length - 2 > 1 ? 's' : ''}</div>` : ''}
         </div>
-        ${cartData.total ? `<div class="cart-total-compact">${cartData.itemCount} items • ${cartData.total}</div>` : ''}
+        ${cartData.total ? `<div class="${totalClass}">${totalText}</div>` : ''}
       </div>
     `;
   }
@@ -413,29 +420,65 @@
         });
       });
 
-      // Get cart total - look for specific total element on ktown4u
+      // Get cart total - ACCURATE extraction with discount/shipping handling
       let total = '';
+      let totalBreakdown = {};
 
-      // Strategy 1: Look for elements with "total" in class/id (most reliable)
-      const totalElements = document.querySelectorAll('[class*="total"], [id*="total"], [class*="Total"], [id*="Total"]');
-      console.log(`🐷 Found ${totalElements.length} elements with 'total' in class/id`);
+      // Strategy 1: Look for FINAL total (after discounts, shipping, tax)
+      // Priority keywords: "final", "grand", "payment", "pay", "amount due"
+      const finalTotalKeywords = ['grand total', 'final total', 'total amount', 'amount due', 'payment total', 'order total'];
+      const allElements = document.querySelectorAll('*');
 
-      for (const el of totalElements) {
-        const text = el.innerText || el.textContent || '';
-        // Look for USD price in total element
-        const priceMatch = text.match(/USD\s*([\d,]+\.?\d*)/i);
-        if (priceMatch) {
-          const priceNum = parseFloat(priceMatch[1].replace(/,/g, ''));
-          // Cart total should be greater than individual items
-          if (priceNum > 10) {
-            total = `USD ${priceNum.toFixed(2)}`;
-            console.log(`🐷 Found cart total in element with class="${el.className}": ${total}`);
-            break;
+      for (const keyword of finalTotalKeywords) {
+        for (const el of allElements) {
+          const text = (el.innerText || el.textContent || '').toLowerCase();
+          // Check if element contains keyword and has a price
+          if (text.includes(keyword)) {
+            const priceMatch = text.match(/USD\s*([\d,]+\.?\d*)/i);
+            if (priceMatch) {
+              const priceNum = parseFloat(priceMatch[1].replace(/,/g, ''));
+              if (priceNum > 0) {
+                total = `USD ${priceNum.toFixed(2)}`;
+                console.log(`🐷 Found FINAL total with keyword "${keyword}": ${total}`);
+                totalBreakdown.source = `final total (${keyword})`;
+                break;
+              }
+            }
           }
+        }
+        if (total) break;
+      }
+
+      // Strategy 2: Look for elements with "total" in class/id (common pattern)
+      if (!total) {
+        const totalElements = document.querySelectorAll('[class*="total"], [id*="total"], [class*="Total"], [id*="Total"]');
+        console.log(`🐷 Found ${totalElements.length} elements with 'total' in class/id`);
+
+        // Find the LARGEST price (likely the final total after discounts)
+        let maxPrice = 0;
+        let maxPriceElement = null;
+
+        for (const el of totalElements) {
+          const text = el.innerText || el.textContent || '';
+          const priceMatch = text.match(/USD\s*([\d,]+\.?\d*)/i);
+          if (priceMatch) {
+            const priceNum = parseFloat(priceMatch[1].replace(/,/g, ''));
+            // Track the largest price (likely final total)
+            if (priceNum > maxPrice && priceNum > 5) {
+              maxPrice = priceNum;
+              maxPriceElement = el;
+            }
+          }
+        }
+
+        if (maxPrice > 0) {
+          total = `USD ${maxPrice.toFixed(2)}`;
+          console.log(`🐷 Found cart total (largest in 'total' elements): ${total}`);
+          totalBreakdown.source = 'total element';
         }
       }
 
-      // Strategy 2: If no total element found, sum up the individual item prices
+      // Strategy 3: Manual calculation as LAST RESORT (may not include discounts/shipping)
       if (!total && items.length > 0) {
         let sum = 0;
         items.forEach(item => {
@@ -447,8 +490,10 @@
           }
         });
         if (sum > 0) {
-          total = `USD ${sum.toFixed(2)}`;
-          console.log(`🐷 Calculated cart total by summing items: ${total}`);
+          total = `~USD ${sum.toFixed(2)}`;
+          console.log(`🐷 ⚠️ Estimated total by summing items (may not include discounts/shipping): ${total}`);
+          totalBreakdown.source = 'estimated (items sum)';
+          totalBreakdown.warning = 'Estimated - may not include discounts or shipping';
         }
       }
 
