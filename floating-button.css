@@ -2,14 +2,31 @@
    Piggy Bong Floating Button & Modal Styles
    ============================================ */
 
-/* Draggable Container (holds button + close button) */
+/* Draggable Container - Edge-Attached Tab Style */
 .piggybong-float-container {
   position: fixed !important;
-  bottom: 24px !important;
-  right: 24px !important;
+  bottom: 120px !important;
+  right: 0 !important;
   z-index: 999999 !important;
-  transition: opacity 0.2s ease, transform 0.2s ease !important;
-  animation: slideInUp 0.5s ease-out !important;
+  transition: right 0.3s ease, opacity 0.2s ease !important;
+  animation: slideInFromRight 0.6s ease-out !important;
+}
+
+/* When dragged away from edge, show full button */
+.piggybong-float-container.dragging {
+  cursor: grabbing !important;
+  right: 20px !important;
+}
+
+.piggybong-float-container.dragging .piggybong-float-btn {
+  cursor: grabbing !important;
+  box-shadow: 0 8px 30px rgba(93, 44, 238, 0.6) !important;
+  border-radius: 50px !important;
+}
+
+/* Hover to expand from edge */
+.piggybong-float-container:hover {
+  right: 0 !important;
 }
 
 .piggybong-float-container:hover .piggybong-close-btn {
@@ -17,16 +34,18 @@
   pointer-events: auto !important;
 }
 
-.piggybong-float-container.dragging {
-  cursor: grabbing !important;
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    right: -200px;
+  }
+  to {
+    opacity: 1;
+    right: 0;
+  }
 }
 
-.piggybong-float-container.dragging .piggybong-float-btn {
-  cursor: grabbing !important;
-  box-shadow: 0 8px 30px rgba(93, 44, 238, 0.6) !important;
-}
-
-/* Floating "Should I Buy This?" Button */
+/* Floating "Should I Buy This?" Button - Edge Tab Style */
 .piggybong-float-btn {
   position: relative !important;
   z-index: 999999 !important;
@@ -35,10 +54,10 @@
   background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%) !important;
   color: white !important;
 
-  /* Button styling */
-  padding: 12px 20px 12px 16px !important;
+  /* Tab styling - rounded on left, flat on right (attached to edge) */
+  padding: 14px 8px 14px 18px !important;
   border: none !important;
-  border-radius: 50px !important;
+  border-radius: 50px 0 0 50px !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 15px !important;
   font-weight: 600 !important;
@@ -49,11 +68,14 @@
   align-items: center !important;
   gap: 10px !important;
 
-  /* Shadow */
-  box-shadow: 0 4px 20px rgba(93, 44, 238, 0.4) !important;
+  /* Shadow on left side only (appears to come from browser) */
+  box-shadow: -4px 4px 20px rgba(93, 44, 238, 0.5) !important;
 
   /* Animation */
   transition: all 0.3s ease !important;
+
+  /* Border on left to emphasize browser attachment */
+  border-left: 3px solid rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Logo Icon with White Circle Background */
@@ -77,18 +99,36 @@
   display: block !important;
 }
 
+.piggybong-btn-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  align-items: flex-start !important;
+}
+
 .piggybong-btn-text {
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.piggybong-chrome-badge {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
   line-height: 1 !important;
   white-space: nowrap !important;
 }
 
 .piggybong-float-btn:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 6px 25px rgba(93, 44, 238, 0.5) !important;
+  box-shadow: -6px 4px 30px rgba(93, 44, 238, 0.7) !important;
 }
 
 .piggybong-float-btn:active {
-  transform: translateY(-1px) !important;
+  box-shadow: -4px 2px 15px rgba(93, 44, 238, 0.5) !important;
 }
 
 /* Close Button (appears on hover) */
@@ -127,16 +167,6 @@
   transform: scale(0.95) !important;
 }
 
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 /* ============================================
    Top-Right Panel (Non-Disruptive)
