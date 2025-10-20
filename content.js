@@ -252,74 +252,71 @@
     try {
       const items = [];
 
-      // ktown4u uses Tailwind CSS with font-bold for artist names
-      // Look for product names with font-bold pattern
-      const boldElements = document.querySelectorAll('span.font-bold, .font-bold');
-      console.log(`🐷 Found ${boldElements.length} bold elements (potential cart items)`);
+      // ktown4u structure: div.flex.w-full.flex-col.text-m2.text-black-21 contains each cart item
+      const cartContainers = document.querySelectorAll('div.flex.w-full.flex-col.text-m2.text-black-21');
+      console.log(`🐷 Found ${cartContainers.length} cart item containers`);
 
-      // Group consecutive bold + block spans as cart items
-      boldElements.forEach((boldEl, index) => {
+      cartContainers.forEach((container, index) => {
         if (index >= 3) return; // Max 3 items
 
-        // Get artist name from bold span
-        const artist = boldEl.textContent.trim();
+        // Get artist name from span.text-m3.font-bold
+        const artistSpan = container.querySelector('span.text-m3.font-bold');
+        const artist = artistSpan ? artistSpan.textContent.trim() : '';
 
-        // Get product description from next sibling (block span)
-        const nextSpan = boldEl.parentElement.querySelector('span.block');
-        const description = nextSpan ? nextSpan.textContent.trim() : '';
+        // Get product description from span.block
+        const descSpan = container.querySelector('span.block');
+        const description = descSpan ? descSpan.textContent.trim() : '';
 
         const fullName = artist && description ? `${artist} - ${description}` : artist || description;
 
-        if (!fullName || fullName.length < 3) return;
+        // Get price - format is: <span>USD</span>37.12
+        // Look for text like "USD 37.12" or just numbers after "USD"
+        const priceText = container.innerText;
+        const priceMatch = priceText.match(/USD\s*[\d,]+\.?\d*/i) || priceText.match(/[\d,]+\.?\d+/);
+        const price = priceMatch ? priceMatch[0] : 'Price N/A';
 
-        // Try to find price near this item (look in parent or nearby elements)
-        let price = '';
-        let priceEl = boldEl.closest('div')?.querySelector('[class*="price"], [class*="USD"], [class*="KRW"]');
-        if (!priceEl) {
-          // Search parent container for price
-          const container = boldEl.closest('div[class*="flex"]')?.parentElement;
-          const allText = container?.innerText || '';
-          const priceMatch = allText.match(/\$[\d,]+\.?\d*|[\d,]+\s*USD|₩[\d,]+/);
-          if (priceMatch) price = priceMatch[0];
-        } else {
-          price = priceEl.textContent.trim();
-        }
+        // Get quantity from input[type="number"]
+        const qtyInput = container.querySelector('input[type="number"]');
+        const qty = qtyInput ? qtyInput.value : '1';
 
-        // Try to find image
-        const img = boldEl.closest('div[class*="flex"]')?.querySelector('img');
-
-        // Try to find quantity
-        let qty = '1';
-        const qtyInput = boldEl.closest('div')?.parentElement?.querySelector('input[type="number"]');
-        if (qtyInput) qty = qtyInput.value || '1';
+        // Get image
+        const img = container.querySelector('img');
 
         console.log(`🐷 Item ${index + 1}:`, {
-          name: fullName.substring(0, 40),
-          price: price || 'not found',
+          name: fullName.substring(0, 50),
+          price,
           qty,
           hasImg: !!img
         });
 
         items.push({
           name: fullName.substring(0, 80),
-          price: price || 'Price N/A',
+          price: price,
           quantity: qty,
           image: img?.src || ''
         });
       });
 
-      // Get cart total by searching page text for largest price
+      // Get cart total - look for largest price on page (without $ symbol)
       let total = '';
       const pageText = document.body.innerText;
-      const allPrices = pageText.match(/\$[\d,]+\.?\d+/g) || [];
-      console.log('🐷 All prices found on page:', allPrices);
 
-      // Cart total is usually the largest price on the page
+      // Match prices in formats: "USD 84.39", "84.39 USD", or just "84.39"
+      const allPrices = pageText.match(/(?:USD\s*)?[\d,]+\.?\d+(?:\s*USD)?/gi) || [];
+      console.log('🐷 All price-like numbers found:', allPrices.slice(0, 10)); // Show first 10
+
       if (allPrices.length > 0) {
-        const numericPrices = allPrices.map(p => parseFloat(p.replace(/[$,]/g, '')));
-        const maxPrice = Math.max(...numericPrices);
-        total = `$${maxPrice.toFixed(2)}`;
-        console.log(`🐷 Cart total (largest price): ${total}`);
+        // Extract just the numeric values
+        const numericPrices = allPrices.map(p => {
+          const numStr = p.replace(/[^\d.]/g, ''); // Remove everything except digits and dots
+          return parseFloat(numStr);
+        }).filter(n => !isNaN(n) && n > 0);
+
+        if (numericPrices.length > 0) {
+          const maxPrice = Math.max(...numericPrices);
+          total = `USD ${maxPrice.toFixed(2)}`;
+          console.log(`🐷 Cart total (largest price): ${total}`);
+        }
       }
 
       if (items.length > 0) {
