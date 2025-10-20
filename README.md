@@ -1,4 +1,4 @@
-# 🐷 Piggy Bong - K-pop Collection Alignment Specialist
+# Piggy Bong - K-pop Collection Alignment Specialist
 
 > An AI-powered Chrome Extension that helps K-pop fans make mindful collection decisions using Chrome's built-in Gemini Nano AI.
 
