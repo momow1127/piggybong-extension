@@ -376,92 +376,118 @@
     return null;
   }
 
-  // Generic cart/product extraction (fallback)
+  // Generic cart/product extraction (fallback) - Works on all sites
   function extractGenericCart(pageText) {
-    // Try to detect cart items with common patterns
-    const cartSelectors = [
-      '.cart-item', '.basket-item', '.checkout-item',
-      '[class*="cart-product"]', '[class*="cart_item"]',
-      '[class*="CartItem"]', 'tr[class*="cart"]'
-    ];
+    console.log('🐷 Using generic extraction (no site-specific extractor)');
 
-    let items = [];
-    for (const selector of cartSelectors) {
-      const elements = document.querySelectorAll(selector);
-      if (elements.length > 0) {
-        elements.forEach((el, index) => {
-          if (index > 2) return; // Max 3 items
+    // Strategy: Look for universal patterns - images + prices + quantities
+    const allImages = document.querySelectorAll('img');
+    const productImages = Array.from(allImages).filter(img => {
+      // Filter out small images (icons, logos) - products are usually >80px
+      return img.width > 80 && img.height > 80;
+    });
 
-          const img = el.querySelector('img');
-          const nameEl = el.querySelector('h2, h3, h4, .name, [class*="name"], a');
-          const qtyEl = el.querySelector('input[type="number"], .qty, .quantity, [class*="quantity"]');
-          const priceEl = el.querySelector('.price, [class*="price"]');
+    console.log(`🐷 Found ${productImages.length} product-sized images on page`);
 
-          if (nameEl) {
-            items.push({
-              name: nameEl.textContent?.trim().substring(0, 60) || 'K-pop Item',
-              price: priceEl?.textContent?.trim() || '',
-              quantity: qtyEl?.value || qtyEl?.textContent?.trim() || '1',
-              image: img?.src || ''
-            });
-          }
+    const items = [];
+
+    // For each large image, check if it's a cart item
+    productImages.forEach((img, index) => {
+      if (index >= 3) return; // Max 3 items
+
+      // Get parent container (likely the cart item wrapper)
+      const container = img.closest('div, tr, li, article');
+      if (!container) return;
+
+      const containerText = container.innerText || '';
+
+      // Look for price near this image
+      const priceMatch = containerText.match(/[\$₩€£]?[\d,]+\.?\d+|USD\s*[\d,]+\.?\d+|KRW\s*[\d,]+/i);
+      const price = priceMatch ? priceMatch[0] : '';
+
+      // Look for quantity input near this image
+      const qtyInput = container.querySelector('input[type="number"]');
+      const qty = qtyInput ? qtyInput.value : '1';
+
+      // Get product name - usually first meaningful text in container
+      const textNodes = Array.from(container.querySelectorAll('a, h1, h2, h3, h4, span, p'))
+        .map(el => el.textContent.trim())
+        .filter(text => text.length > 5 && text.length < 200);
+
+      const name = textNodes[0] || 'K-pop Item';
+
+      if (price) {
+        console.log(`🐷 Generic item ${index + 1}:`, { name: name.substring(0, 40), price, qty });
+        items.push({
+          name: name.substring(0, 80),
+          price: price,
+          quantity: qty,
+          image: img.src
         });
-
-        if (items.length > 0) break;
       }
+    });
+
+    // Try to find cart total - look for all prices on page
+    const allPrices = pageText.match(/(?:USD|KRW|₩|\$|€|£)?\s*[\d,]+\.?\d*/gi) || [];
+    const numericPrices = allPrices
+      .map(p => parseFloat(p.replace(/[^\d.]/g, '')))
+      .filter(n => !isNaN(n) && n > 0);
+
+    let total = '';
+    if (numericPrices.length > 0) {
+      const maxPrice = Math.max(...numericPrices);
+      total = `${maxPrice.toFixed(2)}`;
+      console.log(`🐷 Generic total (largest price): ${total}`);
     }
 
-    // If cart items found, get total
+    // If we found items with prices, return as cart
     if (items.length > 0) {
-      const totalSelectors = ['.total', '.cart-total', '[class*="total"]', '[class*="Total"]'];
-      let total = '';
-
-      for (const selector of totalSelectors) {
-        const totalEl = document.querySelector(selector);
-        if (totalEl) {
-          const match = totalEl.textContent?.match(/[\$₩€£]?[\d,]+\.?\d*/);
-          if (match) {
-            total = match[0];
-            break;
-          }
-        }
-      }
-
+      console.log(`🐷 Generic extraction found ${items.length} items`);
       return {
         isCart: true,
         items: items,
-        total: total || 'Total not found',
+        total: total || 'Total calculating...',
         itemCount: items.length
       };
     }
 
-    // Fallback: single product page
+    // Fallback: Simple cart summary without detailed items
+    console.log('🐷 Falling back to cart summary mode');
+
+    // Count how many quantity inputs exist (indicates cart items)
+    const qtyInputs = document.querySelectorAll('input[type="number"]');
+    const itemCount = qtyInputs.length || 1;
+
+    // Get first meaningful price as reference
     const pricePatterns = [
-      /\$[\d,]+\.?\d*/,              // $29.99
-      /[\d,]+\s*USD/i,               // 29.99 USD
-      /₩[\d,]+/,                     // ₩29,900
-      /[\d,]+\s*KRW/i,               // 29900 KRW
-      /€[\d,]+\.?\d*/,               // €29.99
-      /£[\d,]+\.?\d*/,               // £29.99
-      /[\d,]+\.?\d*\s*원/,            // 29900원
+      /\$[\d,]+\.?\d*/,
+      /[\d,]+\s*USD/i,
+      /₩[\d,]+/,
+      /[\d,]+\s*KRW/i,
+      /€[\d,]+\.?\d*/,
+      /£[\d,]+\.?\d*/
     ];
 
-    let price = 'Price not found';
+    let referencePrice = 'Price not shown';
     for (const pattern of pricePatterns) {
       const match = pageText.match(pattern);
       if (match) {
-        price = match[0];
+        referencePrice = match[0];
         break;
       }
     }
 
-    const titleMatch = document.title.match(/^[^-|]+/);
-    const name = titleMatch ? titleMatch[0].trim().substring(0, 60) : 'K-pop Item';
-
+    // Return simplified cart summary
     return {
-      isCart: false,
-      name: name,
-      price: price
+      isCart: true,
+      itemCount: itemCount,
+      items: [{
+        name: `${itemCount} item${itemCount > 1 ? 's' : ''} in cart`,
+        price: referencePrice,
+        quantity: itemCount.toString(),
+        image: ''
+      }],
+      total: total || numericPrices.length > 0 ? Math.max(...numericPrices).toFixed(2) : 'Calculating...'
     };
   }
 
