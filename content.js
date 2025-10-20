@@ -679,14 +679,20 @@
   async function analyzeWithAI(pageText, pageUrl, productInfo) {
     console.log('🐷 analyzeWithAI() START');
 
-    // Check if LanguageModel API is available
+    // Check if LanguageModel API is available (Chrome 140+ uses LanguageModel directly)
     console.log('🐷 Checking window.ai:', window.ai);
-    console.log('🐷 Checking window.ai.languageModel:', window.ai?.languageModel);
+    console.log('🐷 Checking LanguageModel:', typeof LanguageModel !== 'undefined' ? LanguageModel : 'undefined');
 
-    if (!window.ai || !window.ai.languageModel) {
+    // Try new API first (Chrome 140+), then fall back to old API
+    const hasNewAPI = typeof LanguageModel !== 'undefined';
+    const hasOldAPI = window.ai && window.ai.languageModel;
+
+    if (!hasNewAPI && !hasOldAPI) {
       console.error('🐷 ❌ Chrome Built-in AI not available!');
       throw new Error('AI not available - Chrome Built-in AI (Gemini Nano) not enabled');
     }
+
+    console.log('🐷 Using API:', hasNewAPI ? 'LanguageModel (new)' : 'window.ai (old)');
 
     try {
       console.log('🐷 Creating AI session...');
@@ -721,7 +727,16 @@ EXAMPLES OF GOOD REFLECTION (QUESTIONS, NOT ADVICE):
 - "Do you need all versions, or is completeness calling louder than your collection heart?"
 - "Will future-you treasure this, or is present-you just feeling FOMO?"`;
 
-      const session = await window.ai.languageModel.create({ systemPrompt });
+      // Use appropriate API based on what's available
+      const session = hasNewAPI
+        ? await LanguageModel.create({
+            systemPrompt,
+            language: 'en'  // Specify output language
+          })
+        : await window.ai.languageModel.create({
+            systemPrompt,
+            language: 'en'
+          });
       console.log('🐷 AI session created:', session);
 
       // Build detailed prompt based on cart or single product
@@ -737,14 +752,30 @@ Total: ${productInfo.total}
 Total Items: ${productInfo.itemCount}
 Page: ${pageUrl}
 
-Analyze this cart for FOMO patterns. Return JSON only.`;
+Analyze this cart for FOMO patterns.
+
+IMPORTANT: Return ONLY the JSON object specified in the system prompt with these EXACT fields:
+- priorityLevel (number 0-100)
+- badgeText (string: 'Treasure Item' or 'Think It Over' or 'FOMO Alert')
+- reasoning (string: 1-2 sentences)
+- reflection (string: a question)
+
+Do NOT return any other JSON structure. Return ONLY that exact format.`;
       } else {
         prompt = `PRODUCT ANALYSIS
 Product: ${productInfo.name}
 Price: ${productInfo.price}
 Page: ${pageUrl}
 
-Analyze this purchase decision. Return JSON only.`;
+Analyze this purchase decision.
+
+IMPORTANT: Return ONLY the JSON object specified in the system prompt with these EXACT fields:
+- priorityLevel (number 0-100)
+- badgeText (string: 'Treasure Item' or 'Think It Over' or 'FOMO Alert')
+- reasoning (string: 1-2 sentences)
+- reflection (string: a question)
+
+Do NOT return any other JSON structure. Return ONLY that exact format.`;
       }
 
       console.log('🐷 Sending prompt to AI:', prompt);
@@ -755,28 +786,42 @@ Analyze this purchase decision. Return JSON only.`;
       const jsonMatch = result.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
+        console.log('🐷 Parsed JSON:', parsed);
 
-        // Determine badge class based on new priority scale
-        // 0-30: Treasure (green), 31-70: Think It Over (yellow), 71-100: FOMO (red)
-        let badgeClass = 'badge-good';
-        if (parsed.priorityLevel > 30) badgeClass = 'badge-warning';
-        if (parsed.priorityLevel > 70) badgeClass = 'badge-alert';
+        // Check if required fields exist
+        if (parsed.priorityLevel !== undefined && parsed.badgeText && parsed.reasoning && parsed.reflection) {
+          // Determine badge class based on new priority scale
+          // 0-30: Treasure (green), 31-70: Think It Over (yellow), 71-100: FOMO (red)
+          let badgeClass = 'badge-good';
+          if (parsed.priorityLevel > 30) badgeClass = 'badge-warning';
+          if (parsed.priorityLevel > 70) badgeClass = 'badge-alert';
 
-        return {
-          priorityLevel: parsed.priorityLevel || 50,
-          badgeText: parsed.badgeText || 'Think It Over',
-          badgeClass: badgeClass,
-          reasoning: parsed.reasoning || 'Analyzing your collection patterns...',
-          reflection: parsed.reflection || 'Does this align with your collection goals?'
-        };
+          console.log('🐷 ✅ AI analysis successful!');
+          return {
+            priorityLevel: parsed.priorityLevel,
+            badgeText: parsed.badgeText,
+            badgeClass: badgeClass,
+            reasoning: parsed.reasoning,
+            reflection: parsed.reflection
+          };
+        } else {
+          console.warn('🐷 ⚠️ AI returned JSON but missing required fields:', {
+            hasPriorityLevel: parsed.priorityLevel !== undefined,
+            hasBadgeText: !!parsed.badgeText,
+            hasReasoning: !!parsed.reasoning,
+            hasReflection: !!parsed.reflection
+          });
+        }
       }
 
-      // Fallback if JSON parsing fails
+      // Fallback if JSON parsing fails or missing required fields
+      console.warn('🐷 ⚠️ Using fallback response');
       return {
         priorityLevel: 50,
         badgeText: 'Reflection Needed',
         badgeClass: 'badge-warning',
-        reflection: result.trim()
+        reasoning: 'AI response was not in the expected format',
+        reflection: 'Take a moment to think about this purchase decision.'
       };
 
     } catch (error) {
