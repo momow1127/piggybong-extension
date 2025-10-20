@@ -99,28 +99,11 @@
   display: block !important;
 }
 
-.piggybong-btn-content {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 2px !important;
-  align-items: flex-start !important;
-}
-
 .piggybong-btn-text {
-  line-height: 1.2 !important;
+  line-height: 1 !important;
   white-space: nowrap !important;
   font-size: 15px !important;
   font-weight: 600 !important;
-}
-
-.piggybong-chrome-badge {
-  font-size: 10px !important;
-  font-weight: 500 !important;
-  color: rgba(255, 255, 255, 0.8) !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
 }
 
 .piggybong-float-btn:hover {
@@ -131,7 +114,7 @@
   box-shadow: -4px 2px 15px rgba(93, 44, 238, 0.5) !important;
 }
 
-/* Close Button (appears on hover) */
+/* Close Button (appears on hover) - Matches purple theme */
 .piggybong-close-btn {
   position: absolute !important;
   top: -8px !important;
@@ -139,7 +122,7 @@
   width: 24px !important;
   height: 24px !important;
   border-radius: 50% !important;
-  background: #FF4757 !important;
+  background: rgba(0, 0, 0, 0.6) !important;
   color: white !important;
   border: 2px solid white !important;
   font-size: 18px !important;
@@ -149,7 +132,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
   opacity: 0 !important;
   pointer-events: none !important;
   transition: all 0.2s ease !important;
@@ -158,9 +141,9 @@
 }
 
 .piggybong-close-btn:hover {
-  background: #EE2737 !important;
+  background: rgba(0, 0, 0, 0.8) !important;
   transform: scale(1.1) !important;
-  box-shadow: 0 3px 12px rgba(255, 71, 87, 0.6) !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 .piggybong-close-btn:active {

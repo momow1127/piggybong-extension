@@ -25,15 +25,12 @@
   // Get extension URL for logo
   const logoUrl = chrome.runtime.getURL('piggybong.png');
 
-  // Add logo, text, and Chrome badge
+  // Add logo and text
   floatingBtn.innerHTML = `
     <div class="piggybong-btn-icon">
       <img src="${logoUrl}" alt="Piggy Bong" />
     </div>
-    <div class="piggybong-btn-content">
-      <span class="piggybong-btn-text">Should I Buy This?</span>
-      <span class="piggybong-chrome-badge">Chrome Extension</span>
-    </div>
+    <span class="piggybong-btn-text">Should I Buy This?</span>
   `;
 
   // Create close button (shows on hover)
