@@ -11,6 +11,54 @@
     return;
   }
 
+  // ===========================================
+  // Personalization Helpers (localStorage)
+  // ===========================================
+
+  const PersonalizationHelper = {
+    getBias() {
+      return localStorage.getItem('piggyBias') || null;
+    },
+
+    getCollectionGoal() {
+      return localStorage.getItem('piggyGoal') || null;
+    },
+
+    setBias(bias) {
+      if (bias && bias.trim()) {
+        localStorage.setItem('piggyBias', bias.trim());
+      }
+    },
+
+    setCollectionGoal(goal) {
+      if (goal && goal.trim()) {
+        localStorage.setItem('piggyGoal', goal.trim());
+      }
+    },
+
+    hasPersonalization() {
+      return this.getBias() !== null || this.getCollectionGoal() !== null;
+    },
+
+    clearPersonalization() {
+      localStorage.removeItem('piggyBias');
+      localStorage.removeItem('piggyGoal');
+    },
+
+    getPersonalizationContext() {
+      const bias = this.getBias();
+      const goal = this.getCollectionGoal();
+
+      if (!bias && !goal) return '';
+
+      let context = '\nPERSONALIZATION CONTEXT:\n';
+      if (bias) context += `User's bias: ${bias}\n`;
+      if (goal) context += `User's collection goal: ${goal}\n`;
+
+      return context;
+    }
+  };
+
   // Create floating button container (for dragging + close button)
   const floatingContainer = document.createElement('div');
   floatingContainer.id = 'piggybong-floating-container';
@@ -220,11 +268,131 @@
     `;
   }
 
+  // Function to show onboarding modal (first-time personalization setup)
+  function showOnboardingModal(callback) {
+    const modal = document.createElement('div');
+    modal.id = 'piggybong-onboarding-modal';
+    modal.className = 'piggybong-modal show';
+
+    const logoUrl = chrome.runtime.getURL('piggybong.png');
+
+    // Get existing values if any
+    const existingBias = PersonalizationHelper.getBias() || '';
+    const existingGoal = PersonalizationHelper.getCollectionGoal() || '';
+    const isEditing = existingBias || existingGoal;
+
+    modal.innerHTML = `
+      <div class="piggybong-modal-overlay"></div>
+      <div class="piggybong-modal-content" style="max-width: 450px;">
+        <div class="piggybong-modal-header">
+          <div class="piggybong-brand">
+            <img src="${logoUrl}" alt="Piggy Bong" class="piggybong-header-logo">
+            <span class="piggybong-brand-name">${isEditing ? 'Edit Preferences' : 'Welcome to Piggy Bong!'}</span>
+          </div>
+          <button class="piggybong-modal-close-btn" aria-label="Skip">×</button>
+        </div>
+
+        <div class="piggybong-modal-body">
+          <div class="piggybong-onboarding-content">
+            <p style="margin-bottom: 20px; color: #666;">Help Piggy Bong understand your K-pop collection style:</p>
+
+            <div class="piggybong-form-group">
+              <label for="piggy-bias-input">Who's your bias? (optional)</label>
+              <input
+                type="text"
+                id="piggy-bias-input"
+                placeholder="e.g., Stray Kids, SUPER JUNIOR, NewJeans..."
+                value="${existingBias}"
+                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;"
+              />
+            </div>
+
+            <div class="piggybong-form-group" style="margin-top: 16px;">
+              <label for="piggy-goal-select">What do you usually collect?</label>
+              <select
+                id="piggy-goal-select"
+                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;"
+              >
+                <option value="">Select...</option>
+                <option value="Albums" ${existingGoal === 'Albums' ? 'selected' : ''}>Albums</option>
+                <option value="Photocards" ${existingGoal === 'Photocards' ? 'selected' : ''}>Photocards</option>
+                <option value="Lightsticks" ${existingGoal === 'Lightsticks' ? 'selected' : ''}>Lightsticks</option>
+                <option value="Posters" ${existingGoal === 'Posters' ? 'selected' : ''}>Posters</option>
+                <option value="Everything" ${existingGoal === 'Everything' ? 'selected' : ''}>Everything (OT collector)</option>
+                <option value="Limited Editions" ${existingGoal === 'Limited Editions' ? 'selected' : ''}>Limited Editions only</option>
+                <option value="Casual" ${existingGoal === 'Casual' ? 'selected' : ''}>Casual collecting</option>
+              </select>
+            </div>
+
+            <button
+              id="piggy-save-preferences"
+              class="piggybong-primary-btn"
+              style="width: 100%; margin-top: 20px; padding: 12px; background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 100%); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;"
+            >
+              Save & Continue
+            </button>
+
+            <button
+              id="piggy-skip-onboarding"
+              style="width: 100%; margin-top: 10px; padding: 10px; background: transparent; border: none; color: #999; cursor: pointer; font-size: 13px;"
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Save preferences and continue
+    const saveBtn = modal.querySelector('#piggy-save-preferences');
+    saveBtn.addEventListener('click', () => {
+      const bias = modal.querySelector('#piggy-bias-input').value.trim();
+      const goal = modal.querySelector('#piggy-goal-select').value;
+
+      if (bias) PersonalizationHelper.setBias(bias);
+      if (goal) PersonalizationHelper.setCollectionGoal(goal);
+
+      modal.remove();
+      if (callback) callback();
+    });
+
+    // Skip onboarding
+    const skipBtn = modal.querySelector('#piggy-skip-onboarding');
+    const closeBtn = modal.querySelector('.piggybong-modal-close-btn');
+    const overlay = modal.querySelector('.piggybong-modal-overlay');
+
+    const skipOnboarding = () => {
+      modal.remove();
+      if (callback) callback();
+    };
+
+    skipBtn.addEventListener('click', skipOnboarding);
+    closeBtn.addEventListener('click', skipOnboarding);
+    overlay.addEventListener('click', skipOnboarding);
+  }
+
   // Function to show modal
   function showPiggyBongModal(pageText, pageUrl) {
     console.log('🐷 showPiggyBongModal called');
     console.log('🐷 Page URL:', pageUrl);
 
+    // Check if this is first time (no personalization) and show onboarding
+    if (!PersonalizationHelper.hasPersonalization()) {
+      showOnboardingModal(() => {
+        // After onboarding (or skip), show main analysis modal
+        showAnalysisModal(pageText, pageUrl);
+      });
+      return;
+    }
+
+    // Already has personalization, go straight to analysis
+    showAnalysisModal(pageText, pageUrl);
+  }
+
+  // Main analysis modal (renamed from showPiggyBongModal)
+  function showAnalysisModal(pageText, pageUrl) {
     // Remove existing modal if any
     const existingModal = document.getElementById('piggybong-modal');
     if (existingModal) {
@@ -252,7 +420,12 @@
             <img src="${logoUrl}" alt="Piggy Bong" class="piggybong-header-logo">
             <span class="piggybong-brand-name">Piggy Bong</span>
           </div>
-          <button class="piggybong-modal-close-btn" aria-label="Close">×</button>
+          <div class="piggybong-header-actions">
+            <button class="piggybong-settings-btn" aria-label="Edit Preferences" title="Edit your bias and collection goals">
+              ⚙️
+            </button>
+            <button class="piggybong-modal-close-btn" aria-label="Close">×</button>
+          </div>
         </div>
 
         <div class="piggybong-modal-body">
@@ -270,6 +443,19 @@
     `;
 
     document.body.appendChild(modal);
+
+    // Settings button handler
+    const settingsBtn = modal.querySelector('.piggybong-settings-btn');
+    settingsBtn.addEventListener('click', () => {
+      // Close current modal
+      modal.remove();
+
+      // Show onboarding modal for editing preferences
+      showOnboardingModal(() => {
+        // After editing, show analysis modal again
+        showAnalysisModal(pageText, pageUrl);
+      });
+    });
 
     // Close button handler
     const closeBtn = modal.querySelector('.piggybong-modal-close-btn');
@@ -312,34 +498,28 @@
       // Add AI analysis results below product card
       const analysisHTML = `
 
-        <!-- Priority Assessment (like Phia's price comparison) -->
+        <!-- Fan Style Assessment -->
         <div class="piggybong-assessment-card">
           <div class="assessment-header">
-            <span class="assessment-icon">💭</span>
-            <span class="assessment-title">Priority Assessment</span>
+            <span class="assessment-icon">${aiResult.fanStyleEmoji}</span>
+            <span class="assessment-title">Your Fan Style</span>
           </div>
 
-          <!-- Visual meter with emoji labels -->
-          <div class="priority-meter">
-            <div class="meter-bar">
-              <div class="meter-fill" style="width: ${aiResult.priorityLevel}%"></div>
-              <div class="meter-indicator" style="left: ${aiResult.priorityLevel}%"></div>
-            </div>
-            <div class="meter-labels">
-              <span>💜 Treasure</span>
-              <span>🧡 Consider</span>
-              <span>❤️ FOMO</span>
-            </div>
+          <!-- Fan Style Badge -->
+          <div class="fanstyle-badge">
+            <div class="fanstyle-emoji">${aiResult.fanStyleEmoji}</div>
+            <div class="fanstyle-name">${aiResult.fanStyle}</div>
           </div>
 
+          <!-- Priority Badge -->
           <div class="priority-badge ${aiResult.badgeClass}">
             ${aiResult.badgeText}
           </div>
         </div>
 
-        <!-- Why This Score? -->
+        <!-- Why This Style? -->
         <div class="piggybong-reasoning">
-          <h3>📊 Why This Score?</h3>
+          <h3>📊 Why This Style?</h3>
           <div class="reasoning-content">
             ${aiResult.reasoning}
           </div>
@@ -696,36 +876,42 @@
 
     try {
       console.log('🐷 Creating AI session...');
-      const systemPrompt = `You are Piggy Bong 🐷, a warm, insightful K-pop companion that helps fans make thoughtful collection decisions.
+      const systemPrompt = `You are Piggy Bong 🐷, a cheerful K-pop companion that helps fans understand their shopping behavior style.
 
-Analyze shopping cart or product page and produce contextual emotional value check.
+Task: Analyze a fan's shopping cart and identify what kind of fan style this purchase represents.
 
-RESPONSE FORMAT (JSON):
+POSSIBLE FAN STYLES:
+- "Collector" (💎) - Deeply committed, loves rare or limited editions, focused collecting
+- "Dedicated Fan" (🎀) - Thoughtful and selective about their bias, quality over quantity
+- "Casual Listener" (🌸) - Enjoys merch casually for fun or aesthetic, lighthearted approach
+- "Impulse Zone" (🌧️) - Spontaneous or FOMO-driven decisions, multiple groups, hype-chasing
+
+RESPONSE FORMAT (JSON ONLY):
 {
-  "priorityLevel": <number 0-100, where 0=treasure/collection goal, 30=moderate, 70=consider carefully, 100=pure FOMO>,
-  "badgeText": "<use these: 'Treasure Item' (0-30), 'Think It Over' (31-70), 'FOMO Alert' (71-100)>",
-  "reasoning": "<1-2 sentences explaining SPECIFIC FACTORS: duplicate items, comeback timing, limited edition, bias relevance, multiple groups in cart, completionist behavior, impulse patterns>",
-  "reflection": "<1 warm QUESTION that encourages self-reflection, NOT advice. Use fan language: bias, comeback, photocard, lightstick, collection goals. Examples: 'Is this your bias, or comeback hype?' or 'Does this fit your collection focus, or are you chasing completeness?'>"
+  "fanStyle": "Collector" | "Dedicated Fan" | "Casual Listener" | "Impulse Zone",
+  "badgeText": "Treasure Item" | "Think It Over" | "FOMO Alert",
+  "reasoning": "1-2 short sentences (under 40 words) explaining why in a friendly fan tone",
+  "reflection": "1 warm QUESTION that encourages self-reflection (use fan language: bias, comeback, photocard, limited drop, collection goals)"
 }
 
 RULES:
-1. NEVER use: budget, money, finance, spending, afford, expensive, cheap, cost, save
-2. USE fan-language: bias, comeback, photocard, lightstick, limited edition, collection goals, must-haves, FOMO
-3. In "reasoning": BE SPECIFIC about what you see (duplicates? multiple groups? limited edition? comeback timing?)
-4. In "reflection": ASK A QUESTION, don't lecture. Be a supportive friend.
-5. Tone = warm, fun, non-judgmental
+1. Keep reasoning UNDER 40 words, friendly and conversational
+2. NEVER mention: budget, money, finance, spending, afford, expensive, cheap, cost, save
+3. USE fan-language: bias, comeback, photocard, lightstick, limited drop, collection goals, FOMO, era
+4. In "reasoning": BE SPECIFIC about what you see (duplicates? multiple groups? limited edition? bias relevance?)
+5. In "reflection": ASK A QUESTION, don't lecture. Be a supportive friend.
+6. Match fanStyle to badgeText logically:
+   - Collector → usually "Treasure Item" or "Think It Over"
+   - Dedicated Fan → usually "Treasure Item" or "Think It Over"
+   - Casual Listener → usually "Think It Over"
+   - Impulse Zone → usually "FOMO Alert" or "Think It Over"
 
-EXAMPLES OF GOOD REASONING:
-- "Multiple items from different groups (BTS + NewJeans) suggests browsing rather than focused collecting"
-- "This appears to be a limited lightstick from your bias group, which aligns with collection goals"
-- "Buying 3 versions of the same album may indicate completionist FOMO"
-- "Random photocard bundles often lead to duplicates and storage overwhelm"
+EXAMPLES:
+- fanStyle: "Collector", reasoning: "Limited edition SUPER JUNIOR Season's Greetings aligns with focused collecting. This looks like a must-have for your collection!"
+- fanStyle: "Impulse Zone", reasoning: "Multiple groups in cart (SUPER JUNIOR + Stray Kids) suggests browsing beyond your usual bias. FOMO vibes detected!"
+- fanStyle: "Dedicated Fan", reasoning: "Single bias item purchase shows selective collecting. You know what you want!"
 
-EXAMPLES OF GOOD REFLECTION (QUESTIONS, NOT ADVICE):
-- "Are both groups your biases, or is one an impulse add?"
-- "Is this comeback special to you, or are you caught in the hype?"
-- "Do you need all versions, or is completeness calling louder than your collection heart?"
-- "Will future-you treasure this, or is present-you just feeling FOMO?"`;
+Return ONLY clean JSON. No extra text.`;
 
       // Use appropriate API based on what's available
       const session = hasNewAPI
@@ -743,41 +929,47 @@ EXAMPLES OF GOOD REFLECTION (QUESTIONS, NOT ADVICE):
 
       // Build detailed prompt based on cart or single product
       let prompt = '';
+
+      // Add personalization context if available
+      const personalizationContext = PersonalizationHelper.getPersonalizationContext();
+
       if (productInfo.isCart && productInfo.items) {
         const itemsList = productInfo.items.map((item, i) =>
           `Item ${i+1}: ${item.name} (Qty: ${item.quantity}, Price: ${item.price})`
         ).join('\n');
 
-        prompt = `CART ANALYSIS
+        prompt = `${personalizationContext}
+CART ANALYSIS:
 ${itemsList}
 Total: ${productInfo.total}
 Total Items: ${productInfo.itemCount}
 Page: ${pageUrl}
 
-Analyze this cart for FOMO patterns.
+Analyze this cart and return the fanStyle assessment as JSON.
 
-IMPORTANT: Return ONLY the JSON object specified in the system prompt with these EXACT fields:
-- priorityLevel (number 0-100)
-- badgeText (string: 'Treasure Item' or 'Think It Over' or 'FOMO Alert')
-- reasoning (string: 1-2 sentences)
-- reflection (string: a question)
+IMPORTANT: Return ONLY the JSON object with these EXACT fields:
+- fanStyle (string: "Collector" or "Dedicated Fan" or "Casual Listener" or "Impulse Zone")
+- badgeText (string: "Treasure Item" or "Think It Over" or "FOMO Alert")
+- reasoning (string: under 40 words, friendly tone)
+- reflection (string: a thoughtful question)
 
-Do NOT return any other JSON structure. Return ONLY that exact format.`;
+Return ONLY clean JSON. No markdown, no extra text.`;
       } else {
-        prompt = `PRODUCT ANALYSIS
+        prompt = `${personalizationContext}
+PRODUCT ANALYSIS:
 Product: ${productInfo.name}
 Price: ${productInfo.price}
 Page: ${pageUrl}
 
-Analyze this purchase decision.
+Analyze this purchase decision and return the fanStyle assessment as JSON.
 
-IMPORTANT: Return ONLY the JSON object specified in the system prompt with these EXACT fields:
-- priorityLevel (number 0-100)
-- badgeText (string: 'Treasure Item' or 'Think It Over' or 'FOMO Alert')
-- reasoning (string: 1-2 sentences)
-- reflection (string: a question)
+IMPORTANT: Return ONLY the JSON object with these EXACT fields:
+- fanStyle (string: "Collector" or "Dedicated Fan" or "Casual Listener" or "Impulse Zone")
+- badgeText (string: "Treasure Item" or "Think It Over" or "FOMO Alert")
+- reasoning (string: under 40 words, friendly tone)
+- reflection (string: a thoughtful question)
 
-Do NOT return any other JSON structure. Return ONLY that exact format.`;
+Return ONLY clean JSON. No markdown, no extra text.`;
       }
 
       console.log('🐷 Sending prompt to AI:', prompt);
@@ -790,17 +982,25 @@ Do NOT return any other JSON structure. Return ONLY that exact format.`;
         const parsed = JSON.parse(jsonMatch[0]);
         console.log('🐷 Parsed JSON:', parsed);
 
-        // Check if required fields exist
-        if (parsed.priorityLevel !== undefined && parsed.badgeText && parsed.reasoning && parsed.reflection) {
-          // Determine badge class based on new priority scale
-          // 0-30: Treasure (green), 31-70: Think It Over (yellow), 71-100: FOMO (red)
+        // Check if required fields exist (new Fan Style format)
+        if (parsed.fanStyle && parsed.badgeText && parsed.reasoning && parsed.reflection) {
+          // Determine badge class based on badgeText
           let badgeClass = 'badge-good';
-          if (parsed.priorityLevel > 30) badgeClass = 'badge-warning';
-          if (parsed.priorityLevel > 70) badgeClass = 'badge-alert';
+          if (parsed.badgeText === 'Think It Over') badgeClass = 'badge-warning';
+          if (parsed.badgeText === 'FOMO Alert') badgeClass = 'badge-alert';
+
+          // Map fanStyle to emoji
+          const fanStyleEmoji = {
+            'Collector': '💎',
+            'Dedicated Fan': '🎀',
+            'Casual Listener': '🌸',
+            'Impulse Zone': '🌧️'
+          };
 
           console.log('🐷 ✅ AI analysis successful!');
           return {
-            priorityLevel: parsed.priorityLevel,
+            fanStyle: parsed.fanStyle,
+            fanStyleEmoji: fanStyleEmoji[parsed.fanStyle] || '💭',
             badgeText: parsed.badgeText,
             badgeClass: badgeClass,
             reasoning: parsed.reasoning,
@@ -808,7 +1008,7 @@ Do NOT return any other JSON structure. Return ONLY that exact format.`;
           };
         } else {
           console.warn('🐷 ⚠️ AI returned JSON but missing required fields:', {
-            hasPriorityLevel: parsed.priorityLevel !== undefined,
+            hasFanStyle: !!parsed.fanStyle,
             hasBadgeText: !!parsed.badgeText,
             hasReasoning: !!parsed.reasoning,
             hasReflection: !!parsed.reflection
@@ -819,11 +1019,12 @@ Do NOT return any other JSON structure. Return ONLY that exact format.`;
       // Fallback if JSON parsing fails or missing required fields
       console.warn('🐷 ⚠️ Using fallback response');
       return {
-        priorityLevel: 50,
-        badgeText: 'Reflection Needed',
+        fanStyle: 'Casual Listener',
+        fanStyleEmoji: '🌸',
+        badgeText: 'Think It Over',
         badgeClass: 'badge-warning',
-        reasoning: 'AI response was not in the expected format',
-        reflection: 'Take a moment to think about this purchase decision.'
+        reasoning: 'AI response was not in the expected format. Take a moment to reflect!',
+        reflection: 'What does this purchase mean for your collection?'
       };
 
     } catch (error) {

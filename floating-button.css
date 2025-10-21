@@ -284,6 +284,34 @@
   letter-spacing: -0.5px !important;
 }
 
+/* Header Actions Container */
+.piggybong-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* Settings Button */
+.piggybong-settings-btn {
+  width: 32px !important;
+  height: 32px !important;
+  border: none !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 50% !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.piggybong-settings-btn:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.05) !important;
+}
+
+/* Close Button */
 .piggybong-modal-close-btn {
   width: 32px !important;
   height: 32px !important;
@@ -650,6 +678,31 @@
   color: #757575 !important;
 }
 
+/* Fan Style Badge */
+.fanstyle-badge {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 20px !important;
+  background: linear-gradient(135deg, #FFE4F1 0%, #FFF0F5 100%) !important;
+  border-radius: 16px !important;
+  margin-bottom: 16px !important;
+}
+
+.fanstyle-emoji {
+  font-size: 48px !important;
+  line-height: 1 !important;
+}
+
+.fanstyle-name {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #D63384 !important;
+  text-align: center !important;
+}
+
 /* Priority Badge (like Phia's "$699 is high") */
 .priority-badge {
   display: inline-block !important;
@@ -658,6 +711,7 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 14px !important;
   font-weight: 600 !important;
+  margin-top: 8px !important;
 }
 
 .badge-good {
