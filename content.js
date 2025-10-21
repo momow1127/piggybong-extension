@@ -731,7 +731,9 @@ EXAMPLES OF GOOD REFLECTION (QUESTIONS, NOT ADVICE):
       const session = hasNewAPI
         ? await LanguageModel.create({
             systemPrompt,
-            language: 'en'  // Specify output language
+            expectedOutputs: [
+              { type: "text", languages: ["en"] }
+            ]
           })
         : await window.ai.languageModel.create({
             systemPrompt,
