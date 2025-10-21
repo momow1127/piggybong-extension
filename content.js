@@ -495,8 +495,27 @@
         loadingDiv.remove();
       }
 
+      // Generate context summary
+      let contextSummary = '';
+      if (productInfo.isCart && productInfo.items && productInfo.items.length > 0) {
+        const itemNames = productInfo.items.map(item => {
+          const name = item.name.split('-')[0].trim();
+          return name;
+        });
+        const displayNames = itemNames.slice(0, 2).join(' & ');
+        const itemCount = productInfo.items.length;
+        contextSummary = `Analyzing ${itemCount} item${itemCount > 1 ? 's' : ''} from ${displayNames}${itemCount > 2 ? ' and more' : ''}`;
+      } else {
+        contextSummary = `Analyzing ${productInfo.name}`;
+      }
+
       // Add AI analysis results below product card
       const analysisHTML = `
+
+        <!-- Context Summary -->
+        <div class="piggybong-context-summary">
+          ${contextSummary}
+        </div>
 
         <!-- Fan Style Assessment -->
         <div class="piggybong-assessment-card">
