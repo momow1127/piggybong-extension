@@ -297,7 +297,7 @@
             <p style="margin-bottom: 20px; color: #666;">Help Piggy Bong understand your K-pop collection style:</p>
 
             <div class="piggybong-form-group">
-              <label for="piggy-bias-input">Who's your bias? (optional)</label>
+              <label for="piggy-bias-input" style="display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #4a4a4a;">Who's your bias? (optional)</label>
               <input
                 type="text"
                 id="piggy-bias-input"
@@ -308,7 +308,7 @@
             </div>
 
             <div class="piggybong-form-group" style="margin-top: 16px;">
-              <label for="piggy-goal-select">What do you usually collect?</label>
+              <label for="piggy-goal-select" style="display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #4a4a4a;">What do you usually collect?</label>
               <select
                 id="piggy-goal-select"
                 style="width: 100%; padding: 10px 32px 10px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;"
