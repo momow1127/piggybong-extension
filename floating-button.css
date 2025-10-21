@@ -6,9 +6,9 @@
 .piggybong-float-container {
   position: fixed !important;
   bottom: 120px !important;
-  right: 0 !important;
+  right: -10px !important; /* Slightly hidden by default, peeking out */
   z-index: 999999 !important;
-  transition: right 0.3s ease, opacity 0.2s ease !important;
+  transition: right 0.3s ease, opacity 0.2s ease, transform 0.3s ease !important;
   animation: slideInFromRight 0.6s ease-out !important;
 }
 
@@ -24,14 +24,9 @@
   border-radius: 50px !important;
 }
 
-/* Hover to expand from edge */
+/* Hover to expand from edge - fully visible */
 .piggybong-float-container:hover {
-  right: 0 !important;
-}
-
-.piggybong-float-container:hover .piggybong-close-btn {
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  right: 0 !important; /* Fully extended on hover */
 }
 
 @keyframes slideInFromRight {
@@ -55,7 +50,7 @@
   color: white !important;
 
   /* Tab styling - rounded on left, flat on right (attached to edge) */
-  padding: 14px 8px 14px 4px !important;
+  padding: 14px 4px 14px 8px !important;
   border: none !important;
   border-radius: 50px 0 0 50px !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
@@ -63,7 +58,7 @@
   font-weight: 600 !important;
   cursor: pointer !important;
 
-  /* Flex layout for drag handle + icon + text */
+  /* Flex layout for icon + text + drag handle (reversed order) */
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
@@ -95,7 +90,7 @@
 /* Expand drag handle when hovering - button extends */
 .piggybong-float-container:hover .piggybong-drag-handle {
   width: 26px !important;
-  padding: 0 6px 0 8px !important;
+  padding: 0 8px 0 6px !important;
   opacity: 1 !important;
 }
 
@@ -110,7 +105,7 @@
 .piggybong-float-container.dragging .piggybong-drag-handle {
   cursor: grabbing !important;
   width: 26px !important;
-  padding: 0 6px 0 8px !important;
+  padding: 0 8px 0 6px !important;
   opacity: 1 !important;
 }
 
@@ -164,40 +159,58 @@
   box-shadow: -4px 2px 15px rgba(93, 44, 238, 0.5) !important;
 }
 
-/* Close Button (appears on hover) - Matches purple theme */
+/* Close Button (standard top-right corner position) - Matches purple theme */
 .piggybong-close-btn {
+  /* Absolute positioning - top-right corner (standard pattern) */
   position: absolute !important;
-  top: -8px !important;
-  right: -8px !important;
-  width: 24px !important;
-  height: 24px !important;
+  top: -8px !important; /* Top-right corner, slightly overlapping */
+  right: -8px !important; /* Top-right corner, slightly overlapping */
+
+  /* Sizing */
+  width: 22px !important;
+  height: 22px !important;
+
+  /* Styling */
   border-radius: 50% !important;
   background: rgba(0, 0, 0, 0.6) !important;
   color: white !important;
   border: 2px solid white !important;
-  font-size: 18px !important;
+  font-size: 14px !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   cursor: pointer !important;
+
+  /* Layout */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+
+  /* Initially hidden */
   opacity: 0 !important;
   pointer-events: none !important;
   transition: all 0.2s ease !important;
-  z-index: 1000000 !important;
+
   padding: 0 !important;
+  z-index: 1000001 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Show close button on container hover */
+.piggybong-float-container:hover .piggybong-close-btn {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .piggybong-close-btn:hover {
   background: rgba(0, 0, 0, 0.8) !important;
+  border-color: white !important;
   transform: scale(1.1) !important;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 .piggybong-close-btn:active {
   transform: scale(0.95) !important;
+  background: rgba(0, 0, 0, 0.9) !important;
 }
 
 

@@ -49,7 +49,8 @@ Keep the entire response under 70 words. Focus on analysis and reflection based 
     console.log('Attempting to create AI session...');
 
     const sessionPromise = window.LanguageModel.create({
-      systemPrompt: systemPrompt
+      systemPrompt: systemPrompt,
+      language: 'en'
     });
 
     const timeoutPromise = new Promise((_, reject) =>
@@ -138,21 +139,10 @@ async function runValueCheck(pageText, pageUrl) {
   reportContainer.classList.add('has-report');
   runCheckBtn.disabled = true;
 
-  // If no AI session exists yet, try to create it now
-  if (!aiSession && window.LanguageModel) {
-    console.log('Creating AI session on-demand...');
-    try {
-      await initializeAI();
-    } catch (error) {
-      console.log('Failed to initialize AI on-demand:', error);
-    }
-  }
-
   const userPrompt = `The current page is ${pageUrl}. Analyze the following text content from the cart/checkout page and generate the Value Check Report as strictly requested in the system prompt. Text to analyze: \n\n${pageText.substring(0, 3000)}`;
 
   if (aiSession) {
     try {
-      console.log('Sending prompt to AI...');
       // Use a timeout to prevent infinite wait
       const promptPromise = aiSession.prompt(userPrompt);
       const timeoutPromise = new Promise((_, reject) =>
@@ -160,11 +150,10 @@ async function runValueCheck(pageText, pageUrl) {
       );
 
       const aiReply = await Promise.race([promptPromise, timeoutPromise]);
-      console.log('✅ Received AI response');
       reportContainer.textContent = aiReply.trim();
     } catch (error) {
       console.error("AI execution error or timeout:", error);
-      reportContainer.textContent = "⚠️ AI took too long to respond\n\nUsing fallback analysis...\n\n- **Reflection:** Take a moment to check your **collection goals**! Are these items on your **top picks** list, or are you feeling the urgency of **FOMO**? ✨\n- **Next Step:** Close the window, take a deep breath, and check your **wishlist**.";
+      reportContainer.textContent = "⚠️ AI Check Failed\n\nUsing fallback analysis...\n\n- **Reflection:** Take a moment to check your **collection goals**! Are these items on your **top picks** list, or are you feeling the urgency of **FOMO**? ✨\n- **Next Step:** Close the window, take a deep breath, and check your **wishlist**.";
     }
   } else {
     // Fallback with basic text analysis if AI never initialized
@@ -226,6 +215,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 
-// AI will be initialized on-demand when user clicks "Value Check" button
-// This prevents slow popup load times
-// initializeAI();
+// Start the AI initialization process immediately when the popup opens
+initializeAI();

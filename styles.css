@@ -77,8 +77,8 @@ body {
   flex: 1;
   min-height: 140px;
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
 }
 
 .report-content {
@@ -86,7 +86,7 @@ body {
   font-size: 14px;
   line-height: 1.6;
   color: #4a4a4a;
-  text-align: left;
+  text-align: center;
   white-space: pre-wrap;
 }
 

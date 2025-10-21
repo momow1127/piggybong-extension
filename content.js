@@ -12,6 +12,83 @@
   }
 
   // ===========================================
+  // Cart Detection Logic (Strict Mode)
+  // ===========================================
+
+  function isCartPage() {
+    const url = window.location.href.toLowerCase();
+    const pageText = document.body.innerText.toLowerCase();
+
+    // Check URL patterns for cart/checkout pages
+    const cartUrlPatterns = [
+      '/cart', '/basket', '/bag', '/checkout',
+      '/order', '/purchase', '/payment',
+      'step=1', 'step=2', 'step=3',
+      'orderform', 'shoppingcart'
+    ];
+
+    // Check page content indicators
+    const cartTextIndicators = [
+      'shopping cart', 'shopping bag', 'my cart', 'your cart',
+      'checkout', 'items in cart', 'proceed to checkout',
+      'order summary', 'cart total', 'subtotal',
+      'remove from cart', 'update cart', 'cart is empty'
+    ];
+
+    // Match either URL or page content
+    const hasCartUrl = cartUrlPatterns.some(pattern => url.includes(pattern));
+    const hasCartContent = cartTextIndicators.some(text => pageText.includes(text));
+
+    return hasCartUrl || hasCartContent;
+  }
+
+  function getCartItemCount() {
+    const pageText = document.body.innerText.toLowerCase();
+
+    // Strategy 1: Look for explicit item count in text
+    const itemCountPatterns = [
+      /(\d+)\s*items?\s+in\s+cart/i,
+      /cart\s*\((\d+)\)/i,
+      /(\d+)\s*items?\s+total/i
+    ];
+
+    for (const pattern of itemCountPatterns) {
+      const match = pageText.match(pattern);
+      if (match) {
+        const count = parseInt(match[1]);
+        if (!isNaN(count)) return count;
+      }
+    }
+
+    // Strategy 2: Check for "empty cart" indicators
+    const emptyCartIndicators = [
+      'cart is empty', 'your cart is empty', 'no items in cart',
+      'shopping cart is empty', 'bag is empty', '0 items'
+    ];
+
+    if (emptyCartIndicators.some(text => pageText.includes(text))) {
+      return 0;
+    }
+
+    // Strategy 3: Try to count cart item elements (site-specific)
+    const hostname = window.location.hostname;
+
+    if (hostname.includes('ktown4u')) {
+      const cartItems = document.querySelectorAll('div.flex.w-full.flex-col.text-m2.text-black-21');
+      return cartItems.length;
+    }
+
+    // Generic: count elements that look like cart items
+    const genericCartItems = document.querySelectorAll('[class*="cart-item"], [class*="cartItem"], [class*="CartItem"]');
+    if (genericCartItems.length > 0) {
+      return genericCartItems.length;
+    }
+
+    // Unknown: assume cart has items (allow button to show)
+    return -1; // -1 means "unknown, assume has items"
+  }
+
+  // ===========================================
   // Personalization Helpers (localStorage)
   // ===========================================
 
@@ -59,10 +136,22 @@
     }
   };
 
-  // Create floating button container (for dragging + close button)
-  const floatingContainer = document.createElement('div');
-  floatingContainer.id = 'piggybong-floating-container';
-  floatingContainer.className = 'piggybong-float-container';
+  // ===========================================
+  // Main Initialization with Cart Detection
+  // ===========================================
+
+  let floatingContainer = null;
+  let isButtonCreated = false;
+
+  function createFloatingButton() {
+    if (isButtonCreated) return;
+
+    console.log('🐷 Creating Piggy Bong floating button...');
+
+    // Create floating button container (for dragging + close button)
+    floatingContainer = document.createElement('div');
+    floatingContainer.id = 'piggybong-floating-container';
+    floatingContainer.className = 'piggybong-float-container';
 
   // Create the main button
   const floatingBtn = document.createElement('button');
@@ -74,25 +163,25 @@
   const logoUrl = chrome.runtime.getURL('piggybong.png');
   const settingsIconUrl = chrome.runtime.getURL('settings.svg');
 
-  // Add drag handle, logo, and text
+  // Add logo, text, and drag handle (no close button inside)
   floatingBtn.innerHTML = `
-    <div class="piggybong-drag-handle">
-      <div class="drag-dots"></div>
-    </div>
     <div class="piggybong-btn-icon">
       <img src="${logoUrl}" alt="Piggy Bong" />
     </div>
     <span class="piggybong-btn-text">Should I Buy This?</span>
+    <div class="piggybong-drag-handle">
+      <div class="drag-dots"></div>
+    </div>
   `;
 
-  // Create close button (shows on hover)
+  // Create close button (separate from floatingBtn)
   const closeBtn = document.createElement('button');
   closeBtn.className = 'piggybong-close-btn';
   closeBtn.innerHTML = '×';
   closeBtn.setAttribute('aria-label', 'Close Piggy Bong');
   closeBtn.title = 'Dismiss';
 
-  // Add both buttons to container
+  // Add both to container
   floatingContainer.appendChild(floatingBtn);
   floatingContainer.appendChild(closeBtn);
 
@@ -225,6 +314,11 @@
     // Create and show modal
     showPiggyBongModal(pageText, pageUrl);
   });
+
+  // Mark button as created
+  isButtonCreated = true;
+  console.log('🐷 Piggy Bong: Floating button created successfully!');
+  } // End of createFloatingButton()
 
   // Generate cart HTML with items (COMPACT VERSION)
   function generateCartHTML(cartData) {
@@ -480,6 +574,13 @@
 
     console.log('🐷 runAIAnalysis() called');
     console.log('🐷 productInfo:', productInfo);
+
+    // Check if productInfo is null (cart is empty or extraction failed)
+    if (!productInfo || productInfo === null) {
+      console.warn('🐷 ⚠️ No product info extracted - cart might be empty');
+      showFallback(modalBody);
+      return;
+    }
 
     try {
       // Get AI analysis (product info already extracted)
@@ -851,13 +952,26 @@
 
   // Show fallback UI
   function showFallback(modalBody) {
+    // Remove loading state
+    const loadingDiv = modalBody.querySelector('.piggybong-loading');
+    if (loadingDiv) {
+      loadingDiv.remove();
+    }
+
     modalBody.innerHTML = `
       <div class="piggybong-result">
-        <h3>🐷 Priority Check</h3>
-        <div class="piggybong-analysis">
-          <p><strong>Quick Reflection:</strong></p>
-          <p>Take a moment to check your collection goals! Are these items on your top picks list, or are you feeling the urgency of FOMO? ✨</p>
-          <p><strong>Next Step:</strong> Close this window, take a deep breath, and review your wishlist.</p>
+        <div style="text-align: center; padding: 20px;">
+          <div style="font-size: 48px; margin-bottom: 16px;">🛒</div>
+          <h3 style="font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 0 0 12px 0;">Hmm, I can't see your cart items</h3>
+          <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0 0 16px 0;">
+            This might be because your cart is empty, or the page layout is new to me.
+          </p>
+          <div style="background: #f9f9f9; padding: 16px; border-radius: 12px; border: 1px solid #e8e8e8; text-align: left;">
+            <p style="font-size: 13px; color: #4a4a4a; margin: 0 0 8px 0; font-weight: 600;">💭 Quick Reflection:</p>
+            <p style="font-size: 13px; color: #666; line-height: 1.5; margin: 0;">
+              Before checking out, ask yourself: Are these items on your wishlist? Do they align with your collection goals? Take a breath and decide thoughtfully! ✨
+            </p>
+          </div>
         </div>
       </div>
     `;
@@ -942,6 +1056,7 @@ Return ONLY clean JSON. No markdown, no extra text.`;
       const session = hasNewAPI
         ? await LanguageModel.create({
             systemPrompt,
+            language: 'en',
             expectedOutputs: [
               { type: "text", languages: ["en"] }
             ]
@@ -951,6 +1066,12 @@ Return ONLY clean JSON. No markdown, no extra text.`;
             language: 'en'
           });
       console.log('🐷 AI session created:', session);
+
+      // Defensive null check (should not happen due to earlier check, but just in case)
+      if (!productInfo) {
+        console.error('🐷 ❌ productInfo is null in analyzeWithAI');
+        throw new Error('No product information available');
+      }
 
       // Build detailed prompt based on cart or single product
       let prompt = '';
@@ -1058,5 +1179,159 @@ Return ONLY clean JSON. No markdown, no extra text.`;
     }
   }
 
-  console.log('🐷 Piggy Bong: Floating button injected!');
+  // Function to update button state based on cart contents
+  function updateButtonState() {
+    if (!floatingContainer) return;
+
+    const itemCount = getCartItemCount();
+    const floatingBtn = floatingContainer.querySelector('#piggybong-floating-btn');
+    const btnText = floatingBtn?.querySelector('.piggybong-btn-text');
+
+    // Always keep button text consistent and fully visible
+    if (btnText) btnText.textContent = 'Should I Buy This?';
+
+    // Log cart state for debugging
+    if (itemCount === 0) {
+      console.log('🐷 Cart is empty - button will show empty cart message');
+    } else {
+      console.log(`🐷 Cart has ${itemCount === -1 ? 'items (unknown count)' : itemCount + ' items'} - button ready for analysis`);
+    }
+  }
+
+  // Function to handle empty cart click
+  function handleEmptyCartClick(e) {
+    const itemCount = getCartItemCount();
+
+    if (itemCount === 0) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Show gentle message
+      const modal = document.createElement('div');
+      modal.className = 'piggybong-modal show';
+      modal.innerHTML = `
+        <div class="piggybong-modal-overlay"></div>
+        <div class="piggybong-modal-content" style="max-width: 380px;">
+          <div class="piggybong-modal-header">
+            <div class="piggybong-brand">
+              <img src="${chrome.runtime.getURL('piggybong.png')}" alt="Piggy Bong" class="piggybong-header-logo">
+              <span class="piggybong-brand-name">Piggy Bong</span>
+            </div>
+            <button class="piggybong-modal-close-btn" aria-label="Close">×</button>
+          </div>
+          <div class="piggybong-modal-body">
+            <div style="text-align: center; padding: 20px;">
+              <div style="font-size: 48px; margin-bottom: 16px;">🛒</div>
+              <h3 style="font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 0 0 12px 0;">Nothing in your cart yet!</h3>
+              <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0;">
+                I help you reflect on K-pop merch before checkout —<br>
+                add some items, and I'll be here to help you decide!
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      const closeBtn = modal.querySelector('.piggybong-modal-close-btn');
+      const overlay = modal.querySelector('.piggybong-modal-overlay');
+
+      const closeModal = () => {
+        modal.classList.add('closing');
+        setTimeout(() => modal.remove(), 300);
+      };
+
+      closeBtn.addEventListener('click', closeModal);
+      overlay.addEventListener('click', closeModal);
+
+      return false;
+    }
+  }
+
+  // ===========================================
+  // Cart Detection & Initialization
+  // ===========================================
+
+  function initializePiggyBong() {
+    console.log('🐷 Piggy Bong: Checking if this is a cart page...');
+
+    // Strict mode: only show on cart pages
+    if (!isCartPage()) {
+      console.log('🐷 Not a cart page - button will not be shown');
+      return;
+    }
+
+    console.log('🐷 Cart page detected! Initializing button...');
+    createFloatingButton();
+    updateButtonState();
+
+    // Add empty cart handler to the button
+    const floatingBtn = document.getElementById('piggybong-floating-btn');
+    if (floatingBtn) {
+      floatingBtn.addEventListener('click', handleEmptyCartClick, true); // Capture phase
+    }
+  }
+
+  // ===========================================
+  // MutationObserver for Dynamic Cart Detection
+  // ===========================================
+
+  let reCheckTimeout = null;
+
+  function scheduleReCheck() {
+    // Debounce: only re-check after 2 seconds of no mutations
+    clearTimeout(reCheckTimeout);
+    reCheckTimeout = setTimeout(() => {
+      console.log('🐷 Re-checking cart state...');
+
+      // If cart page detected and button doesn't exist yet, create it
+      if (isCartPage() && !isButtonCreated) {
+        console.log('🐷 Cart appeared dynamically - creating button now!');
+        createFloatingButton();
+        updateButtonState();
+
+        const floatingBtn = document.getElementById('piggybong-floating-btn');
+        if (floatingBtn) {
+          floatingBtn.addEventListener('click', handleEmptyCartClick, true);
+        }
+      }
+
+      // If button exists, update its state
+      if (isButtonCreated) {
+        updateButtonState();
+      }
+    }, 2000);
+  }
+
+  // Watch for DOM changes (for AJAX cart updates)
+  const observer = new MutationObserver((mutations) => {
+    // Only care about meaningful changes (text/structure)
+    const hasSignificantChange = mutations.some(mutation =>
+      mutation.type === 'childList' ||
+      (mutation.type === 'characterData' && mutation.target.textContent.length > 10)
+    );
+
+    if (hasSignificantChange) {
+      scheduleReCheck();
+    }
+  });
+
+  // Start observing after DOM is ready
+  if (document.body) {
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+    console.log('🐷 MutationObserver started - watching for dynamic cart updates');
+  }
+
+  // Initial check on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePiggyBong);
+  } else {
+    initializePiggyBong();
+  }
+
+  console.log('🐷 Piggy Bong: Content script loaded');
 })();
