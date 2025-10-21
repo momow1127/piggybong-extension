@@ -422,7 +422,7 @@
           </div>
           <div class="piggybong-header-actions">
             <button class="piggybong-settings-btn" aria-label="Edit Preferences" title="Edit your bias and collection goals">
-              ⚙️
+              <img src="${chrome.runtime.getURL('settings.svg')}" alt="Settings" class="settings-icon" />
             </button>
             <button class="piggybong-modal-close-btn" aria-label="Close">×</button>
           </div>

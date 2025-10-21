@@ -40,7 +40,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["piggybong.png", "modal.html", "modal.js", "modal.css"],
+      "resources": ["piggybong.png", "settings.svg", "modal.html", "modal.js", "modal.css"],
       "matches": ["<all_urls>"]
     }
   ]
