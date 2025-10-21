@@ -432,8 +432,8 @@
           <!-- Loading state for AI analysis -->
           <div class="piggybong-loading">
             <div class="piggybong-spinner"></div>
-            <p>🤖 AI is analyzing your collection alignment...</p>
-            <p style="font-size: 12px; color: #999; margin-top: 8px;">This takes 3-5 seconds using on-device AI</p>
+            <p>Analyzing your items in the cart...</p>
+            <p style="font-size: 12px; color: #999; margin-top: 8px;">This takes 3-5 seconds</p>
           </div>
         </div>
       </div>
