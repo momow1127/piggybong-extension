@@ -332,6 +332,36 @@
   transform: scale(1.05) !important;
 }
 
+/* Onboarding Buttons */
+#piggy-save-preferences {
+  transition: all 0.2s ease !important;
+}
+
+#piggy-save-preferences:hover {
+  background: linear-gradient(135deg, #4A1FD9 0%, #7340E0 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(93, 44, 238, 0.3) !important;
+}
+
+#piggy-save-preferences:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 6px rgba(93, 44, 238, 0.3) !important;
+}
+
+#piggy-skip-onboarding {
+  transition: all 0.2s ease !important;
+}
+
+#piggy-skip-onboarding:hover {
+  color: #4A1FD9 !important;
+  background: rgba(93, 44, 238, 0.05) !important;
+  border-radius: 6px !important;
+}
+
+#piggy-skip-onboarding:active {
+  background: rgba(93, 44, 238, 0.1) !important;
+}
+
 /* Modal Body */
 .piggybong-modal-body {
   padding: 20px !important;
