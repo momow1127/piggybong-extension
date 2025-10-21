@@ -311,7 +311,7 @@
               <label for="piggy-goal-select">What do you usually collect?</label>
               <select
                 id="piggy-goal-select"
-                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;"
+                style="width: 100%; padding: 10px 32px 10px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;"
               >
                 <option value="">Select...</option>
                 <option value="Albums" ${existingGoal === 'Albums' ? 'selected' : ''}>Albums</option>
