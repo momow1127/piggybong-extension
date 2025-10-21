@@ -327,14 +327,14 @@
             <button
               id="piggy-save-preferences"
               class="piggybong-primary-btn"
-              style="width: 100%; margin-top: 20px; padding: 12px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 14px;"
+              style="width: 100%; margin-top: 20px; padding: 12px 24px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); border: none; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; font-size: 14px;"
             >
               Save & Continue
             </button>
 
             <button
               id="piggy-skip-onboarding"
-              style="width: 100%; margin-top: 10px; padding: 10px; background: transparent; border: none; color: #5D2CEE; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: underline;"
+              style="width: 100%; margin-top: 10px; padding: 10px 24px; background: transparent; border: none; color: #5D2CEE; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: underline; border-radius: 50px;"
             >
               Skip for now
             </button>

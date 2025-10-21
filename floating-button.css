@@ -355,7 +355,7 @@
 #piggy-skip-onboarding:hover {
   color: #4A1FD9 !important;
   background: rgba(93, 44, 238, 0.05) !important;
-  border-radius: 6px !important;
+  border-radius: 50px !important;
 }
 
 #piggy-skip-onboarding:active {
