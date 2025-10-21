@@ -510,11 +510,6 @@
             <div class="fanstyle-name">${aiResult.fanStyle}</div>
           </div>
 
-          <!-- Priority Badge -->
-          <div class="priority-badge ${aiResult.badgeClass}">
-            ${aiResult.badgeText}
-          </div>
-
           <!-- Why This Style (merged into card) -->
           <div class="reasoning-content-inline">
             ${aiResult.reasoning}
@@ -523,9 +518,9 @@
 
         <!-- Fan Tip -->
         <div class="piggybong-fan-tip">
-          <h3>Fan Tip</h3>
+          <h3>💡 Fan Tip</h3>
           <div class="fan-tip-content">
-            ${aiResult.nextStep}
+            ${aiResult.nextStep.replace(/[💕💎🌸✨🐷🌧️🎀]/g, '').trim()}
           </div>
         </div>
       `;
