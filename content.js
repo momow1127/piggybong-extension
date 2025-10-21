@@ -429,9 +429,6 @@
         </div>
 
         <div class="piggybong-modal-body">
-          <!-- Show cart or product card immediately -->
-          ${productInfo.isCart ? generateCartHTML(productInfo) : generateProductHTML(productInfo)}
-
           <!-- Loading state for AI analysis -->
           <div class="piggybong-loading">
             <div class="piggybong-spinner"></div>
