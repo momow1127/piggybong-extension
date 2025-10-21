@@ -362,6 +362,24 @@
   background: rgba(93, 44, 238, 0.1) !important;
 }
 
+/* Form Input Styling */
+#piggy-bias-input,
+#piggy-goal-select {
+  transition: all 0.2s ease !important;
+}
+
+#piggy-bias-input:focus,
+#piggy-goal-select:focus {
+  outline: none !important;
+  border-color: #5D2CEE !important;
+  box-shadow: 0 0 0 3px rgba(93, 44, 238, 0.1) !important;
+}
+
+#piggy-bias-input:active,
+#piggy-goal-select:active {
+  border-color: #5D2CEE !important;
+}
+
 /* Modal Body */
 .piggybong-modal-body {
   padding: 20px !important;
