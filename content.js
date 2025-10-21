@@ -334,7 +334,7 @@
 
             <button
               id="piggy-skip-onboarding"
-              style="width: 100%; margin-top: 10px; padding: 10px 24px; background: transparent; border: none; color: #5D2CEE; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: underline; border-radius: 50px;"
+              style="width: 100%; margin-top: 10px; padding: 10px 24px; background: transparent; border: none; color: #5D2CEE; cursor: pointer; font-size: 14px; font-weight: 600; border-radius: 50px;"
             >
               Skip for now
             </button>
