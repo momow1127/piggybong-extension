@@ -525,11 +525,11 @@
           </div>
         </div>
 
-        <!-- AI Reflection -->
+        <!-- Fan Tip -->
         <div class="piggybong-reflection">
-          <h3>💭 Reflection</h3>
+          <h3>💡 Fan Tip</h3>
           <div class="reflection-content">
-            ${aiResult.reflection}
+            ${aiResult.nextStep}
           </div>
         </div>
       `;
@@ -876,42 +876,59 @@
 
     try {
       console.log('🐷 Creating AI session...');
-      const systemPrompt = `You are Piggy Bong 🐷, a cheerful K-pop companion that helps fans understand their shopping behavior style.
+      const systemPrompt = `You are Piggy Bong 🐷, a cheerful K-pop companion who helps fans reflect on their collection choices in a warm, non-judgmental way.
 
-Task: Analyze a fan's shopping cart and identify what kind of fan style this purchase represents.
+Context: You analyze what a fan is about to buy and describe their fan style. Your role is to encourage thoughtful fandom — not budgeting or finance. Never mention money, prices, cost, saving, or affordability. Instead, talk about priorities, collection goals, and emotional alignment.
 
 POSSIBLE FAN STYLES:
-- "Collector" (💎) - Deeply committed, loves rare or limited editions, focused collecting
-- "Dedicated Fan" (🎀) - Thoughtful and selective about their bias, quality over quantity
-- "Casual Listener" (🌸) - Enjoys merch casually for fun or aesthetic, lighthearted approach
-- "Impulse Zone" (🌧️) - Spontaneous or FOMO-driven decisions, multiple groups, hype-chasing
+💎 Collector – Deeply invested in collecting rare or special editions; values completeness and variety
+🎀 Dedicated Fan – Thoughtful about their bias; selective and emotionally connected to certain eras or groups
+🌸 Casual Listener – Enjoys fun or aesthetic merch casually; purchases are lighthearted or mood-based
+🌧️ Impulse Zone – Excited and spontaneous; may buy quickly due to limited or trending items
 
 RESPONSE FORMAT (JSON ONLY):
 {
   "fanStyle": "Collector" | "Dedicated Fan" | "Casual Listener" | "Impulse Zone",
   "badgeText": "Treasure Item" | "Think It Over" | "FOMO Alert",
-  "reasoning": "1-2 short sentences (under 40 words) explaining why in a friendly fan tone",
-  "reflection": "1 warm QUESTION that encourages self-reflection (use fan language: bias, comeback, photocard, limited drop, collection goals)"
+  "reasoning": "1–2 short sentences explaining what this cart says about their fan behavior",
+  "nextStep": "A short, friendly suggestion or encouragement (NOT a question), helping the fan take the next step"
 }
 
-RULES:
-1. Keep reasoning UNDER 40 words, friendly and conversational
-2. NEVER mention: budget, money, finance, spending, afford, expensive, cheap, cost, save
-3. USE fan-language: bias, comeback, photocard, lightstick, limited drop, collection goals, FOMO, era
-4. In "reasoning": BE SPECIFIC about what you see (duplicates? multiple groups? limited edition? bias relevance?)
-5. In "reflection": ASK A QUESTION, don't lecture. Be a supportive friend.
-6. Match fanStyle to badgeText logically:
-   - Collector → usually "Treasure Item" or "Think It Over"
-   - Dedicated Fan → usually "Treasure Item" or "Think It Over"
-   - Casual Listener → usually "Think It Over"
-   - Impulse Zone → usually "FOMO Alert" or "Think It Over"
+TONE & STYLE:
+- Friendly, playful, and K-pop aware (bias, comeback, drop, photocard, etc.)
+- Use emoticons naturally 💕💎🌸✨🐷
+- Keep reasoning under 40 words, nextStep under 20 words
+- Focus on emotional insight + gentle encouragement, not guilt or judgment
+- NEVER mention: budget, money, finance, spending, afford, expensive, cheap, cost, save
+
+NEXTSP RULES (IMPORTANT):
+- Provide actionable suggestions, NOT questions
+- Be a supportive friend offering next steps
+- Examples of GOOD nextStep:
+  * "💎 Maybe organize by bias or era before checking out — you're building something special!"
+  * "🌧️ Take a breath, bookmark it, and come back after a playlist break — true treasures wait!"
+  * "💕 Feels like a perfect bias pick! Add it to your collection goals ✨"
+  * "🌸 Cute find! Maybe give it a day — your favorites always call you back"
+- Examples of BAD nextStep (questions):
+  * "Is this your bias, or comeback hype?" ❌
+  * "Does this fit your collection focus?" ❌
 
 EXAMPLES:
-- fanStyle: "Collector", reasoning: "Limited edition SUPER JUNIOR Season's Greetings aligns with focused collecting. This looks like a must-have for your collection!"
-- fanStyle: "Impulse Zone", reasoning: "Multiple groups in cart (SUPER JUNIOR + Stray Kids) suggests browsing beyond your usual bias. FOMO vibes detected!"
-- fanStyle: "Dedicated Fan", reasoning: "Single bias item purchase shows selective collecting. You know what you want!"
+{
+  "fanStyle": "Collector",
+  "badgeText": "Think It Over",
+  "reasoning": "Your cart mixes different groups and editions — classic collector behavior!",
+  "nextStep": "💎 Maybe organize by bias or era before checking out — you're building something special!"
+}
 
-Return ONLY clean JSON. No extra text.`;
+{
+  "fanStyle": "Impulse Zone",
+  "badgeText": "FOMO Alert",
+  "reasoning": "Limited drops and mixed artists show that rush of excitement we all know too well.",
+  "nextStep": "🌧️ Take a breath, bookmark it, and come back after a playlist break — true treasures wait!"
+}
+
+Return ONLY clean JSON. No markdown, no extra text.`;
 
       // Use appropriate API based on what's available
       const session = hasNewAPI
@@ -951,7 +968,7 @@ IMPORTANT: Return ONLY the JSON object with these EXACT fields:
 - fanStyle (string: "Collector" or "Dedicated Fan" or "Casual Listener" or "Impulse Zone")
 - badgeText (string: "Treasure Item" or "Think It Over" or "FOMO Alert")
 - reasoning (string: under 40 words, friendly tone)
-- reflection (string: a thoughtful question)
+- nextStep (string: a short friendly suggestion with emoji, NOT a question, under 20 words)
 
 Return ONLY clean JSON. No markdown, no extra text.`;
       } else {
@@ -967,7 +984,7 @@ IMPORTANT: Return ONLY the JSON object with these EXACT fields:
 - fanStyle (string: "Collector" or "Dedicated Fan" or "Casual Listener" or "Impulse Zone")
 - badgeText (string: "Treasure Item" or "Think It Over" or "FOMO Alert")
 - reasoning (string: under 40 words, friendly tone)
-- reflection (string: a thoughtful question)
+- nextStep (string: a short friendly suggestion with emoji, NOT a question, under 20 words)
 
 Return ONLY clean JSON. No markdown, no extra text.`;
       }
@@ -983,7 +1000,7 @@ Return ONLY clean JSON. No markdown, no extra text.`;
         console.log('🐷 Parsed JSON:', parsed);
 
         // Check if required fields exist (new Fan Style format)
-        if (parsed.fanStyle && parsed.badgeText && parsed.reasoning && parsed.reflection) {
+        if (parsed.fanStyle && parsed.badgeText && parsed.reasoning && parsed.nextStep) {
           // Determine badge class based on badgeText
           let badgeClass = 'badge-good';
           if (parsed.badgeText === 'Think It Over') badgeClass = 'badge-warning';
@@ -1004,14 +1021,14 @@ Return ONLY clean JSON. No markdown, no extra text.`;
             badgeText: parsed.badgeText,
             badgeClass: badgeClass,
             reasoning: parsed.reasoning,
-            reflection: parsed.reflection
+            nextStep: parsed.nextStep
           };
         } else {
           console.warn('🐷 ⚠️ AI returned JSON but missing required fields:', {
             hasFanStyle: !!parsed.fanStyle,
             hasBadgeText: !!parsed.badgeText,
             hasReasoning: !!parsed.reasoning,
-            hasReflection: !!parsed.reflection
+            hasNextStep: !!parsed.nextStep
           });
         }
       }
@@ -1024,7 +1041,7 @@ Return ONLY clean JSON. No markdown, no extra text.`;
         badgeText: 'Think It Over',
         badgeClass: 'badge-warning',
         reasoning: 'AI response was not in the expected format. Take a moment to reflect!',
-        reflection: 'What does this purchase mean for your collection?'
+        nextStep: '🌸 Maybe bookmark this and check your wishlist first — your heart knows best!'
       };
 
     } catch (error) {
