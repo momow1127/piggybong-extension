@@ -735,7 +735,7 @@
   padding: 20px !important;
   background: linear-gradient(135deg, #FFE4F1 0%, #FFF0F5 100%) !important;
   border-radius: 16px !important;
-  margin-bottom: 16px !important;
+  margin-bottom: 12px !important;
 }
 
 .fanstyle-emoji {
@@ -802,7 +802,41 @@
   font-style: italic !important;
 }
 
-/* Reflection Section */
+/* Reasoning Content Inline (merged into Fan Style card) */
+.reasoning-content-inline {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  color: #666 !important;
+  text-align: center !important;
+  padding: 12px 16px 0 16px !important;
+}
+
+/* Fan Tip Section (purple theme) */
+.piggybong-fan-tip {
+  background: linear-gradient(135deg, #F3E5FF 0%, #E8D5FF 100%) !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  border: 1px solid #D4B3FF !important;
+  margin-top: 16px !important;
+}
+
+.piggybong-fan-tip h3 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #5D2CEE !important;
+  margin: 0 0 8px 0 !important;
+}
+
+.fan-tip-content {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  color: #6B3AC9 !important;
+}
+
+/* Old Reflection Section (deprecated - keeping for fallback) */
 .piggybong-reflection {
   background: white !important;
   padding: 20px !important;

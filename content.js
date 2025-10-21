@@ -501,7 +501,6 @@
         <!-- Fan Style Assessment -->
         <div class="piggybong-assessment-card">
           <div class="assessment-header">
-            <span class="assessment-icon">${aiResult.fanStyleEmoji}</span>
             <span class="assessment-title">Your Fan Style</span>
           </div>
 
@@ -515,20 +514,17 @@
           <div class="priority-badge ${aiResult.badgeClass}">
             ${aiResult.badgeText}
           </div>
-        </div>
 
-        <!-- Why This Style? -->
-        <div class="piggybong-reasoning">
-          <h3>📊 Why This Style?</h3>
-          <div class="reasoning-content">
+          <!-- Why This Style (merged into card) -->
+          <div class="reasoning-content-inline">
             ${aiResult.reasoning}
           </div>
         </div>
 
         <!-- Fan Tip -->
-        <div class="piggybong-reflection">
-          <h3>💡 Fan Tip</h3>
-          <div class="reflection-content">
+        <div class="piggybong-fan-tip">
+          <h3>Fan Tip</h3>
+          <div class="fan-tip-content">
             ${aiResult.nextStep}
           </div>
         </div>
