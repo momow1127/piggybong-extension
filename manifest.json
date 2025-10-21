@@ -1,11 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Piggy Bong: Fan Priority Check",
+  "name": "Piggy Bong",
   "version": "1.0.1",
-  "description": "A K-pop companion for thoughtful collection decisions.",
+  "description": "Your K-pop shopping companion. Discover your Fan Style and make mindful collection decisions.",
   "action": {
-    "default_popup": "popup.html",
     "default_icon": "piggybong.png"
+  },
+  "background": {
+    "service_worker": "background.js"
   },
   "icons": {
     "16": "piggybong.png",

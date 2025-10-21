@@ -6,7 +6,7 @@
 .piggybong-float-container {
   position: fixed !important;
   bottom: 120px !important;
-  right: -10px !important; /* Slightly hidden by default, peeking out */
+  right: 0 !important;
   z-index: 999999 !important;
   transition: right 0.3s ease, opacity 0.2s ease, transform 0.3s ease !important;
   animation: slideInFromRight 0.6s ease-out !important;
@@ -161,10 +161,10 @@
 
 /* Close Button (standard top-right corner position) - Matches purple theme */
 .piggybong-close-btn {
-  /* Absolute positioning - top-right corner (standard pattern) */
+  /* Absolute positioning - top-right corner, aligned with drag handle */
   position: absolute !important;
   top: -8px !important; /* Top-right corner, slightly overlapping */
-  right: -8px !important; /* Top-right corner, slightly overlapping */
+  right: 4px !important; /* Aligned horizontally with drag handle position */
 
   /* Sizing */
   width: 22px !important;
@@ -585,96 +585,6 @@
   font-style: italic !important;
 }
 
-/* Old Cart Display Styles (keep for backwards compatibility) */
-.cart-header {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  margin-bottom: 16px !important;
-  padding-bottom: 12px !important;
-  border-bottom: 1px solid #e8e8e8 !important;
-}
-
-.cart-icon {
-  font-size: 20px !important;
-}
-
-.cart-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-size: 16px !important;
-  font-weight: 700 !important;
-  color: #1a1a1a !important;
-}
-
-.cart-items-list {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 12px !important;
-  max-height: 200px !important;
-  overflow-y: auto !important;
-  margin-bottom: 12px !important;
-}
-
-.cart-item-row {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  padding: 8px !important;
-  background: #f9f9f9 !important;
-  border-radius: 8px !important;
-}
-
-.cart-item-img {
-  width: 50px !important;
-  height: 50px !important;
-  object-fit: cover !important;
-  border-radius: 6px !important;
-  flex-shrink: 0 !important;
-}
-
-.cart-item-img-placeholder {
-  width: 50px !important;
-  height: 50px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: #e8e8e8 !important;
-  border-radius: 6px !important;
-  font-size: 24px !important;
-  flex-shrink: 0 !important;
-}
-
-.cart-item-info {
-  flex: 1 !important;
-  min-width: 0 !important;
-}
-
-.cart-item-name {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  color: #1a1a1a !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-.cart-item-details {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-size: 12px !important;
-  color: #666 !important;
-  margin-top: 4px !important;
-}
-
-.cart-total {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-size: 18px !important;
-  font-weight: 700 !important;
-  color: #5D2CEE !important;
-  padding-top: 12px !important;
-  border-top: 2px solid #e8e8e8 !important;
-  text-align: right !important;
-}
 
 /* Assessment Card (like Phia's price comparison) */
 .piggybong-assessment-card {
@@ -792,20 +702,6 @@
   margin-top: 8px !important;
 }
 
-.badge-good {
-  background: #e8f5e9 !important;
-  color: #2e7d32 !important;
-}
-
-.badge-warning {
-  background: #fff3e0 !important;
-  color: #ef6c00 !important;
-}
-
-.badge-alert {
-  background: #ffebee !important;
-  color: #c62828 !important;
-}
 
 /* Reasoning Section (Why This Score?) */
 .piggybong-reasoning {
@@ -839,7 +735,7 @@
   line-height: 1.5 !important;
   color: #666 !important;
   text-align: left !important;
-  padding: 12px 16px 0 16px !important;
+  padding: 8px 16px 0 16px !important;
 }
 
 /* Fan Tip Section (purple theme) */
@@ -866,25 +762,3 @@
   color: #6B3AC9 !important;
 }
 
-/* Old Reflection Section (deprecated - keeping for fallback) */
-.piggybong-reflection {
-  background: white !important;
-  padding: 20px !important;
-  border-radius: 16px !important;
-  border: 1px solid #e8e8e8 !important;
-}
-
-.piggybong-reflection h3 {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-size: 16px !important;
-  font-weight: 700 !important;
-  color: #1a1a1a !important;
-  margin: 0 0 12px 0 !important;
-}
-
-.reflection-content {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-size: 14px !important;
-  line-height: 1.6 !important;
-  color: #4a4a4a !important;
-}

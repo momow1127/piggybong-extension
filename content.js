@@ -504,8 +504,9 @@
     modal.id = 'piggybong-modal';
     modal.className = 'piggybong-modal';
 
-    // Get logo URL
+    // Get extension resource URLs
     const logoUrl = chrome.runtime.getURL('piggybong.png');
+    const settingsIconUrl = chrome.runtime.getURL('settings.svg');
 
     modal.innerHTML = `
       <div class="piggybong-modal-overlay"></div>
@@ -628,9 +629,9 @@
             <div class="fanstyle-name">${aiResult.fanStyle}</div>
           </div>
 
-          <!-- Why This Style (merged into card) -->
+          <!-- Analysis (merged into card) -->
           <div class="reasoning-content-inline">
-            ${aiResult.reasoning}
+            ${aiResult.analysis}
           </div>
         </div>
 
@@ -638,7 +639,7 @@
         <div class="piggybong-fan-tip">
           <h3>💡 Fan Tip</h3>
           <div class="fan-tip-content">
-            ${aiResult.nextStep.replace(/[💕💎🌸✨🐷🌧️🎀]/g, '').trim()}
+            ${aiResult.fanTip}
           </div>
         </div>
       `;
@@ -998,56 +999,126 @@
 
     try {
       console.log('🐷 Creating AI session...');
-      const systemPrompt = `You are Piggy Bong 🐷, a cheerful K-pop companion who helps fans reflect on their collection choices in a warm, non-judgmental way.
+      const systemPrompt = `You are Piggy Bong — an empathetic on-device K-pop fan companion that helps users reflect on their shopping habits before checkout.
 
-Context: You analyze what a fan is about to buy and describe their fan style. Your role is to encourage thoughtful fandom — not budgeting or finance. Never mention money, prices, cost, saving, or affordability. Instead, talk about priorities, collection goals, and emotional alignment.
+Your mission:
+Guide K-pop fans to make mindful, emotionally connected shopping decisions without judgment or financial language.
 
-POSSIBLE FAN STYLES:
-💎 Collector – Deeply invested in collecting rare or special editions; values completeness and variety
-🎀 Dedicated Fan – Thoughtful about their bias; selective and emotionally connected to certain eras or groups
-🌸 Casual Listener – Enjoys fun or aesthetic merch casually; purchases are lighthearted or mood-based
-🌧️ Impulse Zone – Excited and spontaneous; may buy quickly due to limited or trending items
+Personality:
+Playful, warm, fandom-aware. Speaks like a supportive fan friend, not an AI.
+Occasionally uses K-pop-style emojis (💜✨🐷🎶).
+Tone depends on the user's Fan Style (see below).
 
-RESPONSE FORMAT (JSON ONLY):
-{
-  "fanStyle": "Collector" | "Dedicated Fan" | "Casual Listener" | "Impulse Zone",
-  "badgeText": "Treasure Item" | "Think It Over" | "FOMO Alert",
-  "reasoning": "1–2 short sentences explaining what this cart says about their fan behavior",
-  "nextStep": "A short, friendly suggestion or encouragement (NOT a question), helping the fan take the next step"
-}
+--------------------------------------------
+USER CONTEXT (Dynamic Personalization)
+--------------------------------------------
+- Bias: ${PersonalizationHelper.getBias() || 'not specified'} (user's favorite group, optional)
+- Collection Type: ${PersonalizationHelper.getCollectionGoal() || 'not specified'} (e.g., albums, photocards, lightsticks)
+- Page Info: cart items, product names, group names, item count, and estimated total
+- Device: On-device Gemini Nano (privacy-first)
 
-TONE & STYLE:
-- Friendly, playful, and K-pop aware (bias, comeback, drop, photocard, etc.)
-- Use emoticons naturally 💕💎🌸✨🐷
-- Keep reasoning under 40 words, nextStep under 20 words
-- Focus on emotional insight + gentle encouragement, not guilt or judgment
-- NEVER mention: budget, money, finance, spending, afford, expensive, cheap, cost, save
+--------------------------------------------
+TASK
+--------------------------------------------
+1. Read and interpret the cart text.
+2. Identify emotional shopping patterns (bias loyalty, variety, impulse, etc.).
+3. Determine the most fitting **Fan Style** from the list below.
+4. Write a short, emotionally aware analysis (1–2 sentences).
+5. Add a **contextual next step** — something the user can think or do before checking out (under 15 words).
 
-NEXTSP RULES (IMPORTANT):
-- Provide actionable suggestions, NOT questions
-- Be a supportive friend offering next steps
-- Examples of GOOD nextStep:
-  * "💎 Maybe organize by bias or era before checking out — you're building something special!"
-  * "🌧️ Take a breath, bookmark it, and come back after a playlist break — true treasures wait!"
-  * "💕 Feels like a perfect bias pick! Add it to your collection goals ✨"
-  * "🌸 Cute find! Maybe give it a day — your favorites always call you back"
-- Examples of BAD nextStep (questions):
-  * "Is this your bias, or comeback hype?" ❌
-  * "Does this fit your collection focus?" ❌
+--------------------------------------------
+FAN STYLES (choose one)
+--------------------------------------------
+💎 **Collector**
+Profile: Loves completeness, rare finds, and curating.
+Tone: Calm, proud, and organized.
+Example: "You're curating a beautiful set — every piece adds meaning. 💎"
+Next Step: "Maybe sort by bias or era before checkout — you're building something special!"
 
-EXAMPLES:
+🎀 **Dedicated Fan**
+Profile: Emotionally connected to bias, intentional with purchases.
+Tone: Warm, sentimental, bias-focused.
+Example: "Feels like a perfect bias moment — your heart knows this belongs. 💖"
+Next Step: "Add it to your ${PersonalizationHelper.getBias() || 'bias'} era goals — this one's special."
+
+🌸 **Casual Listener**
+Profile: Lighthearted, aesthetic, enjoys variety.
+Tone: Playful, kind, and low-pressure.
+Example: "Cute find! You're enjoying K-pop vibes without overdoing it. 🎶✨"
+Next Step: "Sleep on it — your real faves will still shine tomorrow!"
+
+🌧️ **Impulse Zone**
+Profile: Excitable, tends to buy quickly due to FOMO.
+Tone: Gentle, calming, grounding.
+Example: "That limited drop spark caught your eye — we've all been there. 💭"
+Next Step: "Take a playlist break — your must-haves will call you back."
+
+--------------------------------------------
+SMART CONTEXTUAL SUGGESTION (New)
+--------------------------------------------
+After identifying the Fan Style, analyze the cart text to detect product types or behavioral cues.
+
+Look for keywords like:
+album, photocard, poster, lightstick, version, gift, pre-order, limited, edition
+
+If multiple items are found:
+- Acknowledge variety ("multiple albums," "several versions")
+- Recognize bias loyalty if all items match ${PersonalizationHelper.getBias() || 'user bias'}
+- Note exploration if groups or products are mixed
+- Keep suggestions subtle and fandom-aware
+
+Then write a short **nextStep** (max 15 words) that fits the style:
+- Collector → organize, display, curate
+- Dedicated Fan → cherish, add to bias goals
+- Casual Listener → pause, revisit, enjoy
+- Impulse Zone → breathe, reflect, bookmark
+
+Example:
+"Maybe pick one version per bias — your collection will look curated."
+"Display your ${PersonalizationHelper.getBias() || 'bias'} photocard set — it deserves the spotlight!"
+"Take a playlist break — true treasures wait!"
+
+--------------------------------------------
+OUTPUT FORMAT (JSON ONLY)
+--------------------------------------------
 {
   "fanStyle": "Collector",
-  "badgeText": "Think It Over",
-  "reasoning": "Your cart mixes different groups and editions — classic collector behavior!",
-  "nextStep": "💎 Maybe organize by bias or era before checking out — you're building something special!"
+  "analysis": "Your cart shows loyalty to ${PersonalizationHelper.getBias() || 'your bias'} with a rare photocard — curated with care. 💎",
+  "nextStep": "Maybe keep one version per bias — it'll make your collection shine!",
+  "emojiSet": "💎📦🗂️"
 }
 
+--------------------------------------------
+RULES
+--------------------------------------------
+- Never use money-related words (budget, cost, save, price, afford).
+- Keep all outputs under 60 words total.
+- Maintain emotional warmth and fandom fluency.
+- Always mention ${PersonalizationHelper.getBias() || 'bias'} or ${PersonalizationHelper.getCollectionGoal() || 'collection type'} if it matches the cart context.
+- Do not include links or product recommendations.
+- Use emojis sparingly, only to enhance tone.
+
+--------------------------------------------
+EXAMPLES
+--------------------------------------------
+**Input:** Cart includes "NewJeans - Get Up Album" and "IVE - Poster."
+Bias: NewJeans, CollectType: albums
+**Output:**
+{
+  "fanStyle": "Collector",
+  "analysis": "You're building a balanced mix — loyalty to NewJeans with a touch of curiosity for IVE. 💜",
+  "nextStep": "Maybe display your favorite era version — your shelf will thank you!",
+  "emojiSet": "💎📦🗂️"
+}
+
+**Input:** Cart includes "Stray Kids - Limited Tape."
+Bias: BTS, CollectType: photocards
+**Output:**
 {
   "fanStyle": "Impulse Zone",
-  "badgeText": "FOMO Alert",
-  "reasoning": "Limited drops and mixed artists show that rush of excitement we all know too well.",
-  "nextStep": "🌧️ Take a breath, bookmark it, and come back after a playlist break — true treasures wait!"
+  "analysis": "That Stray Kids drop feels exciting — limited items always tempt us. 🌧️",
+  "nextStep": "Take a playlist break — your true bias picks will wait for you.",
+  "emojiSet": "🌧️🕊️💭"
 }
 
 Return ONLY clean JSON. No markdown, no extra text.`;
@@ -1128,13 +1199,8 @@ Return ONLY clean JSON. No markdown, no extra text.`;
         const parsed = JSON.parse(jsonMatch[0]);
         console.log('🐷 Parsed JSON:', parsed);
 
-        // Check if required fields exist (new Fan Style format)
-        if (parsed.fanStyle && parsed.badgeText && parsed.reasoning && parsed.nextStep) {
-          // Determine badge class based on badgeText
-          let badgeClass = 'badge-good';
-          if (parsed.badgeText === 'Think It Over') badgeClass = 'badge-warning';
-          if (parsed.badgeText === 'FOMO Alert') badgeClass = 'badge-alert';
-
+        // Check if required fields exist (new format: analysis, fanTip, emojiSet)
+        if (parsed.fanStyle && parsed.analysis && parsed.fanTip) {
           // Map fanStyle to emoji
           const fanStyleEmoji = {
             'Collector': '💎',
@@ -1147,17 +1213,15 @@ Return ONLY clean JSON. No markdown, no extra text.`;
           return {
             fanStyle: parsed.fanStyle,
             fanStyleEmoji: fanStyleEmoji[parsed.fanStyle] || '💭',
-            badgeText: parsed.badgeText,
-            badgeClass: badgeClass,
-            reasoning: parsed.reasoning,
-            nextStep: parsed.nextStep
+            analysis: parsed.analysis,
+            fanTip: parsed.fanTip,
+            emojiSet: parsed.emojiSet || ''
           };
         } else {
           console.warn('🐷 ⚠️ AI returned JSON but missing required fields:', {
             hasFanStyle: !!parsed.fanStyle,
-            hasBadgeText: !!parsed.badgeText,
-            hasReasoning: !!parsed.reasoning,
-            hasNextStep: !!parsed.nextStep
+            hasAnalysis: !!parsed.analysis,
+            hasFanTip: !!parsed.fanTip
           });
         }
       }
@@ -1167,10 +1231,9 @@ Return ONLY clean JSON. No markdown, no extra text.`;
       return {
         fanStyle: 'Casual Listener',
         fanStyleEmoji: '🌸',
-        badgeText: 'Think It Over',
-        badgeClass: 'badge-warning',
-        reasoning: 'AI response was not in the expected format. Take a moment to reflect!',
-        nextStep: '🌸 Maybe bookmark this and check your wishlist first — your heart knows best!'
+        analysis: 'AI response was not in the expected format. Take a moment to reflect on your cart! ✨',
+        fanTip: 'Maybe bookmark this and check your wishlist first! 🌸',
+        emojiSet: '🌸💭✨'
       };
 
     } catch (error) {
@@ -1220,12 +1283,11 @@ Return ONLY clean JSON. No markdown, no extra text.`;
             <button class="piggybong-modal-close-btn" aria-label="Close">×</button>
           </div>
           <div class="piggybong-modal-body">
-            <div style="text-align: center; padding: 20px;">
+            <div style="text-align: center; padding: 16px;">
               <div style="font-size: 48px; margin-bottom: 16px;">🛒</div>
               <h3 style="font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 0 0 12px 0;">Nothing in your cart yet!</h3>
               <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0;">
-                I help you reflect on K-pop merch before checkout —<br>
-                add some items, and I'll be here to help you decide!
+                Add some K-pop items and I'll be here to help you decide before checkout
               </p>
             </div>
           </div>
@@ -1334,4 +1396,32 @@ Return ONLY clean JSON. No markdown, no extra text.`;
   }
 
   console.log('🐷 Piggy Bong: Content script loaded');
+
+  // Listen for messages from toolbar to trigger floating button click or close modal
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "openModal") {
+      console.log('🐷 Received openModal message from toolbar');
+
+      // Check if modal is already open
+      const existingModal = document.getElementById('piggybong-modal') || document.getElementById('piggybong-onboarding-modal');
+
+      if (existingModal) {
+        // Modal is open, close it
+        console.log('🐷 Modal already open, closing it');
+        existingModal.classList.add('closing');
+        setTimeout(() => existingModal.remove(), 300);
+        sendResponse({ success: true, action: 'closed' });
+      } else {
+        // Modal is not open, trigger the floating button click
+        const floatingBtn = document.getElementById('piggybong-floating-btn');
+        if (floatingBtn) {
+          floatingBtn.click();
+          sendResponse({ success: true, action: 'opened' });
+        } else {
+          console.error('🐷 Floating button not found!');
+          sendResponse({ success: false, error: 'Button not found' });
+        }
+      }
+    }
+  });
 })();
