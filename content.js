@@ -70,8 +70,9 @@
   floatingBtn.className = 'piggybong-float-btn';
   floatingBtn.setAttribute('aria-label', 'Piggy Bong Priority Check');
 
-  // Get extension URL for logo
+  // Get extension URLs (cache them early to avoid "Extension context invalidated" errors)
   const logoUrl = chrome.runtime.getURL('piggybong.png');
+  const settingsIconUrl = chrome.runtime.getURL('settings.svg');
 
   // Add drag handle, logo, and text
   floatingBtn.innerHTML = `
@@ -422,7 +423,7 @@
           </div>
           <div class="piggybong-header-actions">
             <button class="piggybong-settings-btn" aria-label="Edit Preferences" title="Edit your bias and collection goals">
-              <img src="${chrome.runtime.getURL('settings.svg')}" alt="Settings" class="settings-icon" />
+              <img src="${settingsIconUrl}" alt="Settings" class="settings-icon" />
             </button>
             <button class="piggybong-modal-close-btn" aria-label="Close">×</button>
           </div>
