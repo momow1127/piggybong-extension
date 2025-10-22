@@ -368,6 +368,9 @@
     const modal = document.createElement('div');
     modal.id = 'piggybong-onboarding-modal';
     modal.className = 'piggybong-modal show';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'piggybong-onboarding-title');
 
     const logoUrl = chrome.runtime.getURL('piggybong.png');
 
@@ -377,12 +380,12 @@
     const isEditing = existingBias || existingGoal;
 
     modal.innerHTML = `
-      <div class="piggybong-modal-overlay"></div>
+      <div class="piggybong-modal-overlay" aria-hidden="true"></div>
       <div class="piggybong-modal-content" style="max-width: 450px;">
         <div class="piggybong-modal-header">
           <div class="piggybong-brand">
             <img src="${logoUrl}" alt="Piggy Bong" class="piggybong-header-logo">
-            <span class="piggybong-brand-name">${isEditing ? 'Edit Preferences' : 'Welcome to Piggy Bong!'}</span>
+            <span id="piggybong-onboarding-title" class="piggybong-brand-name">${isEditing ? 'Edit Preferences' : 'Welcome to Piggy Bong!'}</span>
           </div>
           <button class="piggybong-modal-close-btn" aria-label="Skip">×</button>
         </div>
@@ -467,6 +470,21 @@
     skipBtn.addEventListener('click', skipOnboarding);
     closeBtn.addEventListener('click', skipOnboarding);
     overlay.addEventListener('click', skipOnboarding);
+
+    // Keyboard accessibility: Escape key to close onboarding
+    const handleEscapeKey = (e) => {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        skipOnboarding(e);
+      }
+    };
+    document.addEventListener('keydown', handleEscapeKey);
+
+    // Clean up event listener when modal is removed
+    const originalRemove = modal.remove.bind(modal);
+    modal.remove = function() {
+      document.removeEventListener('keydown', handleEscapeKey);
+      originalRemove();
+    };
   }
 
   // Function to show modal
@@ -504,18 +522,21 @@
     const modal = document.createElement('div');
     modal.id = 'piggybong-modal';
     modal.className = 'piggybong-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'piggybong-modal-title');
 
     // Get extension resource URLs
     const logoUrl = chrome.runtime.getURL('piggybong.png');
     const settingsIconUrl = chrome.runtime.getURL('settings.svg');
 
     modal.innerHTML = `
-      <div class="piggybong-modal-overlay"></div>
+      <div class="piggybong-modal-overlay" aria-hidden="true"></div>
       <div class="piggybong-modal-content">
         <div class="piggybong-modal-header">
           <div class="piggybong-brand">
             <img src="${logoUrl}" alt="Piggy Bong" class="piggybong-header-logo">
-            <span class="piggybong-brand-name">Piggy Bong</span>
+            <span id="piggybong-modal-title" class="piggybong-brand-name">Piggy Bong</span>
           </div>
           <div class="piggybong-header-actions">
             <button class="piggybong-settings-btn" aria-label="Edit Preferences" title="Edit your bias and collection goals">
@@ -525,12 +546,12 @@
           </div>
         </div>
 
-        <div class="piggybong-modal-body">
+        <div class="piggybong-modal-body" role="main" aria-live="polite" aria-atomic="true">
           <!-- Loading state for AI analysis -->
           <div class="piggybong-loading">
-            <div class="piggybong-spinner"></div>
+            <div class="piggybong-spinner" role="status" aria-label="Loading"></div>
             <p>Analyzing your items in the cart...</p>
-            <p style="font-size: 12px; color: #999; margin-top: 8px;">This takes 3-5 seconds</p>
+            <p style="font-size: 12px; color: #757575; margin-top: 8px;">This takes 3-5 seconds</p>
           </div>
         </div>
       </div>
@@ -563,6 +584,21 @@
 
     closeBtn.addEventListener('click', closeModal);
     overlay.addEventListener('click', closeModal);
+
+    // Keyboard accessibility: Escape key to close modal
+    const handleEscapeKey = (e) => {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        closeModal(e);
+      }
+    };
+    document.addEventListener('keydown', handleEscapeKey);
+
+    // Clean up event listener when modal is removed
+    const originalRemove = modal.remove.bind(modal);
+    modal.remove = function() {
+      document.removeEventListener('keydown', handleEscapeKey);
+      originalRemove();
+    };
 
     // Trigger animation
     setTimeout(() => modal.classList.add('show'), 10);
@@ -1081,16 +1117,28 @@ If multiple items are found:
 - Note exploration if groups or products are mixed
 - Keep suggestions subtle and fandom-aware
 
-Then write a short **nextStep** (max 15 words) that fits the style:
-- Collector → organize, display, curate
-- Dedicated Fan → cherish, add to bias goals
-- Casual Listener → pause, revisit, enjoy
-- Impulse Zone → breathe, reflect, bookmark
+Then write a short **fanTip** (max 15 words) that fits the style:
+- Collector → organize, display, curate YOUR SPECIFIC COLLECTION
+- Dedicated Fan → cherish, add to YOUR BIAS goals
+- Casual Listener → pause, revisit, enjoy WITHOUT pressure
+- Impulse Zone → breathe, reflect, bookmark THIS SPECIFIC CART
 
-Example:
-"Maybe pick one version per bias — your collection will look curated."
-"Display your ${PersonalizationHelper.getBias() || 'bias'} photocard set — it deserves the spotlight!"
-"Take a playlist break — true treasures wait!"
+CRITICAL FOR fanTip:
+❌ BANNED PHRASES - NEVER USE THESE:
+- "Keep exploring" / "There's a whole world of merch"
+- "Browse more" / "Check out more items"
+- "Discover new" / "Find more"
+- Any generic shopping encouragement
+
+✅ REQUIRED - MUST MENTION:
+- User's bias name: "${PersonalizationHelper.getBias()}"
+- User's collection type: "${PersonalizationHelper.getCollectionGoal()}"
+- Specific items in their cart (albums, photocards, etc.)
+
+✅ GOOD Examples:
+"Display your ${PersonalizationHelper.getBias() || 'bias'} photocard collection by era — it's getting impressive!"
+"Maybe pick one ${PersonalizationHelper.getCollectionGoal() || 'item'} per member — quality over quantity!"
+"Sleep on it — your ${PersonalizationHelper.getBias() || 'bias'} albums aren't going anywhere!"
 
 --------------------------------------------
 OUTPUT FORMAT (JSON ONLY)
@@ -1139,11 +1187,18 @@ Output:
   "emojiSet": "🌧️🕊️💭"
 }
 
-**BAD Example (DO NOT DO THIS):**
-❌ "Don't forget to check Ktown4u for more rare finds!" ← Generic, mentions store name
+**BAD Examples (DO NOT DO THIS):**
+❌ "Don't forget to check Ktown4u for more rare finds!" ← Mentions store name
 ❌ "Browse more items to find better deals!" ← Generic shopping advice
 ❌ "Maybe save money for later!" ← Money talk
-✅ INSTEAD: "Display your [BIAS] collection — you're building something special!" ← Personalized, emotional
+❌ "Keep exploring! There's a whole world of merch out there to discover." ← Way too generic!
+❌ "Check out more items from different groups!" ← Generic browsing encouragement
+❌ "Your collection is growing nicely!" ← No personalization, no specific advice
+
+✅ GOOD Examples (DO THIS):
+✅ "Display your NewJeans photocard collection by era — it's getting impressive!"
+✅ "Maybe keep one album version per bias — your shelf will look curated!"
+✅ "Sleep on it — your BTS collection isn't going anywhere!"
 
 Return ONLY clean JSON. No markdown, no extra text.`;
 

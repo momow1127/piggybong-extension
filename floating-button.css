@@ -53,7 +53,7 @@
   padding: 14px 4px 14px 8px !important;
   border: none !important;
   border-radius: 50px 0 0 50px !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 15px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
@@ -286,13 +286,13 @@
   width: 28px !important;
   height: 28px !important;
   border-radius: 50% !important;
-  background: white !important;
+  background: rgba(255, 255, 255, 0.2) !important;
   padding: 4px !important;
   object-fit: contain !important;
 }
 
 .piggybong-brand-name {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 18px !important;
   font-weight: 700 !important;
   color: white !important;
@@ -344,6 +344,7 @@
   background: rgba(255, 255, 255, 0.2) !important;
   border-radius: 50% !important;
   font-size: 24px !important;
+  line-height: 1 !important;
   color: white !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
@@ -353,6 +354,7 @@
   pointer-events: auto !important;
   position: relative !important;
   z-index: 200 !important;
+  padding: 0 !important;
 }
 
 .piggybong-modal-close-btn:hover {
@@ -441,7 +443,7 @@
 }
 
 .piggybong-loading p {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 14px !important;
   color: #666 !important;
   margin: 0 !important;
@@ -456,7 +458,7 @@
 }
 
 .piggybong-result h3 {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 18px !important;
   font-weight: 700 !important;
   color: #1a1a1a !important;
@@ -464,7 +466,7 @@
 }
 
 .piggybong-analysis {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 14px !important;
   line-height: 1.6 !important;
   color: #4a4a4a !important;
@@ -503,7 +505,7 @@
 }
 
 .product-name {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 18px !important;
   font-weight: 700 !important;
   color: #1a1a1a !important;
@@ -512,7 +514,7 @@
 }
 
 .product-price {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 20px !important;
   font-weight: 700 !important;
   color: #5D2CEE !important;
@@ -549,7 +551,7 @@
 }
 
 .cart-item-name-compact {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 13px !important;
   font-weight: 500 !important;
   color: #333 !important;
@@ -563,7 +565,7 @@
 }
 
 .cart-item-price-compact {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 13px !important;
   font-weight: 600 !important;
   color: #5D2CEE !important;
@@ -573,13 +575,13 @@
 
 .cart-more {
   font-size: 12px !important;
-  color: #999 !important;
+  color: #757575 !important;
   font-style: italic !important;
   padding: 4px 0 !important;
 }
 
 .cart-total-compact {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 14px !important;
   font-weight: 700 !important;
   color: #5D2CEE !important;
@@ -615,7 +617,7 @@
 }
 
 .assessment-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 14px !important;
   font-weight: 700 !important;
   color: #1a1a1a !important;
@@ -659,14 +661,14 @@
 .meter-labels {
   display: flex !important;
   justify-content: space-between !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 12px !important;
   color: #757575 !important;
 }
 
 /* Context Summary */
 .piggybong-context-summary {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 13px !important;
   color: #333 !important;
   text-align: center !important;
@@ -692,7 +694,7 @@
 }
 
 .fanstyle-name {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 20px !important;
   font-weight: 700 !important;
   color: #1a1a1a !important;
@@ -704,7 +706,7 @@
   display: inline-block !important;
   padding: 8px 16px !important;
   border-radius: 20px !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 14px !important;
   font-weight: 600 !important;
   margin-top: 8px !important;
@@ -721,7 +723,7 @@
 }
 
 .piggybong-reasoning h3 {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 14px !important;
   font-weight: 700 !important;
   color: #664D00 !important;
@@ -729,7 +731,7 @@
 }
 
 .reasoning-content {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 13px !important;
   line-height: 1.5 !important;
   color: #8B6914 !important;
@@ -738,7 +740,7 @@
 
 /* Reasoning Content Inline (merged into Fan Style card) */
 .reasoning-content-inline {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 13px !important;
   line-height: 1.5 !important;
   color: #666 !important;
@@ -747,17 +749,23 @@
   margin-top: 8px !important;
 }
 
-/* Fan Tip Section (purple theme) */
+/* Next Step Section - Original Light Purple + Piggy Bong Gradient Border */
 .piggybong-fan-tip {
   background: linear-gradient(135deg, #F3E5FF 0%, #E8D5FF 100%) !important;
   padding: 16px !important;
   border-radius: 12px !important;
-  border: 1px solid #D4B3FF !important;
+  position: relative !important;
   margin-top: 16px !important;
+  border: 1px solid transparent !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  background-image:
+    linear-gradient(135deg, #F3E5FF 0%, #E8D5FF 100%),
+    linear-gradient(135deg, rgba(93, 44, 238, 0.4) 0%, rgba(139, 85, 237, 0.4) 100%) !important;
 }
 
 .piggybong-fan-tip h3 {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 14px !important;
   font-weight: 700 !important;
   color: #5D2CEE !important;
@@ -765,9 +773,9 @@
 }
 
 .fan-tip-content {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 13px !important;
   line-height: 1.5 !important;
-  color: #6B3AC9 !important;
+  color: #4A2B9E !important;
 }
 
