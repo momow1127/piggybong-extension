@@ -605,6 +605,134 @@
   margin-bottom: 16px !important;
 }
 
+/* Priority Section - Merged container for items + overall insight */
+.piggybong-priority-section {
+  background: white !important;
+  padding: 20px !important;
+  border-radius: 16px !important;
+  border: 1px solid #e8e8e8 !important;
+  margin-bottom: 16px !important;
+}
+
+.piggybong-priority-section h3 {
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #1a1a1a !important;
+  margin: 0 0 16px 0 !important;
+}
+
+.piggybong-priority-item {
+  padding: 12px 0 !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+
+.piggybong-priority-item:last-of-type {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.piggybong-priority-item:first-of-type {
+  padding-top: 0 !important;
+}
+
+.priority-item-header-row {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  margin-bottom: 4px !important;
+}
+
+.priority-item-name {
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #1a1a1a !important;
+  line-height: 1.4 !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.priority-item-reasoning {
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  color: #1a1a1a !important;
+  line-height: 1.5 !important;
+  font-weight: 500 !important;
+}
+
+.priority-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0px 2px !important;
+  border-radius: 2px !important;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 6px !important;
+  font-weight: 600 !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.1px !important;
+  text-transform: uppercase !important;
+  border: 1px solid transparent !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  flex-shrink: 0 !important;
+  height: fit-content !important;
+}
+
+.priority-badge.priority-high {
+  background-image:
+    linear-gradient(135deg, #EDE7F6 0%, #D1C4E9 100%),
+    linear-gradient(135deg, rgba(103, 58, 183, 0.4) 0%, rgba(126, 87, 194, 0.4) 100%) !important;
+  color: #4527A0 !important;
+}
+
+.priority-badge.priority-medium {
+  background-image:
+    linear-gradient(135deg, #FFF9E6 0%, #FFECB3 100%),
+    linear-gradient(135deg, rgba(255, 179, 0, 0.4) 0%, rgba(255, 193, 7, 0.4) 100%) !important;
+  color: #E65100 !important;
+}
+
+.priority-badge.priority-low {
+  background-image:
+    linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%),
+    linear-gradient(135deg, rgba(158, 158, 158, 0.3) 0%, rgba(176, 176, 176, 0.3) 100%) !important;
+  color: #424242 !important;
+}
+
+/* Overall Insight Section - Light Purple Background */
+.piggybong-overall-insight-section {
+  background: linear-gradient(135deg, #F3E5FF 0%, #E8D5FF 100%) !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  position: relative !important;
+  margin-top: 16px !important;
+  border: 1px solid transparent !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  background-image:
+    linear-gradient(135deg, #F3E5FF 0%, #E8D5FF 100%),
+    linear-gradient(135deg, rgba(93, 44, 238, 0.4) 0%, rgba(139, 85, 237, 0.4) 100%) !important;
+}
+
+.piggybong-overall-insight-section h3 {
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #5D2CEE !important;
+  margin: 0 0 8px 0 !important;
+}
+
+.overall-insight-content {
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  color: #4a3a5c !important;
+  line-height: 1.6 !important;
+  font-weight: 500 !important;
+}
+
 .assessment-header {
   display: flex !important;
   align-items: center !important;

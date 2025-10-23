@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Piggy Bong",
   "version": "1.0.1",
-  "description": "Your K-pop shopping companion. Discover your Fan Style and make mindful collection decisions.",
+  "description": "Your K-pop shopping companion. Rank cart items by priority and make intentional collection decisions.",
   "action": {
     "default_icon": "piggybong.png"
   },
