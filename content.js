@@ -105,29 +105,48 @@ function createPiggyButton() {
 }
 
 function showPiggyModal() {
+  const existingModal = document.getElementById("piggybong-modal");
+  if (existingModal) existingModal.remove();
+
   const modal = document.createElement("div");
-  modal.id = "piggyModal";
-  modal.style = `
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    background: white;
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-    width: 320px;
-    z-index: 999999;
-    font-family: system-ui, sans-serif;
-  `;
+  modal.id = "piggybong-modal";
+  modal.className = "piggybong-modal";
+
+  const logoUrl = chrome.runtime.getURL("piggybong.png");
+  const settingsIconUrl = chrome.runtime.getURL("settings.svg");
+
   modal.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h3 style="margin:0;">🐷 Piggy Bong</h3>
-      <button id="closePiggy" style="border:none;background:none;font-size:18px;cursor:pointer;">✖</button>
+    <div class="piggybong-modal-overlay"></div>
+    <div class="piggybong-modal-content">
+      <div class="piggybong-modal-header">
+        <div class="piggybong-brand">
+          <img src="${logoUrl}" alt="Piggy Bong" class="piggybong-header-logo">
+          <span class="piggybong-brand-name">Piggy Bong</span>
+        </div>
+        <div class="piggybong-header-actions">
+          <button class="piggybong-settings-btn" title="Edit your bias">
+            <img src="${settingsIconUrl}" alt="Settings" class="settings-icon" />
+          </button>
+          <button class="piggybong-modal-close-btn">×</button>
+        </div>
+      </div>
+      <div class="piggybong-modal-body" id="piggyContent">
+        <div class="piggybong-loading">
+          <div class="piggybong-spinner"></div>
+          <p>Analyzing your cart...</p>
+        </div>
+      </div>
     </div>
-    <div id="piggyContent" style="margin-top:12px;">Analyzing your cart... ⏳</div>
   `;
+
   document.body.appendChild(modal);
-  document.getElementById("closePiggy").onclick = () => modal.remove();
+
+  modal.querySelector(".piggybong-modal-close-btn").onclick = () => modal.remove();
+  modal.querySelector(".piggybong-modal-overlay").onclick = () => modal.remove();
+  modal.querySelector(".piggybong-settings-btn").onclick = () => {
+    alert("Settings: Update your bias and goals in localStorage for now");
+  };
+
   runAIAnalysis(modal);
 }
 
@@ -218,20 +237,26 @@ function renderPiggyOutput(data) {
   const content = document.getElementById("piggyContent");
   if (!content) return;
 
+  const itemsHtml = data.items
+    .map(
+      item => `
+      <div class="cart-item">
+        <div class="cart-item-header">
+          <div class="cart-item-name">${item.name}</div>
+          <span class="priority-badge priority-${item.priority.toLowerCase()}">${item.priority}</span>
+        </div>
+        <div class="cart-item-reasoning">${item.reasoning}</div>
+      </div>
+    `
+    )
+    .join("");
+
   const html = `
-    <div style="margin-top:10px;">
-      ${data.items
-        .map(
-          i => `
-        <div style="margin-bottom:10px;">
-          <b>${i.name}</b><br/>
-          <span>${i.reasoning}</span> (${i.priority})
-        </div>`
-        )
-        .join("")}
+    <div class="cart-items-container">
+      ${itemsHtml}
     </div>
-    <div style="margin-top:12px; font-weight:bold;">${data.overallInsight}</div>
-    <div style="color:#555; margin-top:4px;">${data.priorityTip}</div>
+    <div class="overall-insight">${data.overallInsight}</div>
+    <div class="priority-tip">${data.priorityTip}</div>
   `;
   content.innerHTML = html;
 }
