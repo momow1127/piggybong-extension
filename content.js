@@ -541,7 +541,7 @@
           <div class="piggybong-loading">
             <div class="piggybong-spinner" role="status" aria-label="Loading"></div>
             <p>Analyzing your cart...</p>
-            <p style="font-size: 12px; color: #757575; margin-top: 8px;">First time: 3-5 seconds • After: 1-2 seconds</p>
+            <p style="font-size: 12px; color: #757575; margin-top: 8px;">This takes a few seconds</p>
           </div>
         </div>
       </div>
@@ -1014,7 +1014,10 @@
   }
 
   // Cache AI session to avoid recreating it every time (speeds up analysis)
+  // IMPORTANT: Change this version number when you update the prompt to force cache refresh
+  const PROMPT_VERSION = 'v2.0-positive-tone';
   let cachedAISession = null;
+  let cachedPromptVersion = null;
 
   // AI Analysis function - returns structured data for Phia-style UI
   async function analyzeWithAI(pageText, pageUrl, productInfo) {
@@ -1036,11 +1039,16 @@
     console.log('🐷 Using API:', hasNewAPI ? 'LanguageModel (new)' : 'window.ai (old)');
 
     try {
-      // Reuse cached session if available (much faster!)
+      // Reuse cached session if available AND version matches (much faster!)
       let session = cachedAISession;
 
-      if (!session) {
-        console.log('🐷 Creating NEW AI session (first time - this takes 2-3 seconds)...');
+      // Check if we need to recreate session (first time OR prompt updated)
+      if (!session || cachedPromptVersion !== PROMPT_VERSION) {
+        if (cachedPromptVersion !== PROMPT_VERSION) {
+          console.log('🐷 Prompt updated - recreating AI session with new rules...');
+        } else {
+          console.log('🐷 Creating NEW AI session (first time - this takes 2-3 seconds)...');
+        }
         const systemPrompt = `You are Piggy Bong — Your Smart Shopping Prioritizer! 🐷✨
 
 Your mission:
@@ -1059,7 +1067,8 @@ CRITICAL WRITING RULES:
 ❌ NEVER sound like a researcher observing behavior: "The purchase of X suggests...", "actively building...", "shows patterns..."
 ❌ NEVER sound scolding or judgmental: "Take a moment to think", "Quick check", "You should reflect"
 ❌ NEVER be negative about off-bias items: "doesn't align", "not your priority", "doesn't match"
-❌ BANNED WORDS: "This user", "They're", "The user", "This person", "proactively", "evidenced", "indicating", "take a moment", "reflect on", "doesn't align", "not aligned"
+❌ BANNED WORDS: "not", "doesn't", "don't", "isn't", "aren't", "won't", "can't", "no"
+❌ MORE BANNED WORDS: "This user", "They're", "The user", "This person", "proactively", "evidenced", "indicating", "take a moment", "reflect on", "doesn't align", "not aligned"
 ✅ ALWAYS write in SECOND PERSON ("you're", "your", "you") like talking DIRECTLY TO the user
 ✅ ALWAYS sound warm, excited, and friendly: "Ooh!", "Love that!", "Your cart is looking fire!"
 ✅ ALWAYS celebrate their passion FIRST, then gently ask questions
@@ -1100,17 +1109,24 @@ Score each item 0-6 points based on:
 3. ULTRA SHORT reasoning (2-4 words ONLY!)
 4. Be warm and friendly - like a supportive bestie!
 
-🚨 CRITICAL: Reasoning MUST be 2-4 words MAXIMUM! NO NEGATIVE LANGUAGE!
+🚨 CRITICAL: Reasoning MUST be 2-4 words MAXIMUM! NO NEGATIVE LANGUAGE! NEVER USE "NOT" OR "DOESN'T"!
+
+❌ BANNED WORDS: "not", "doesn't", "don't", "isn't", "aren't", "won't", "can't", "no"
+❌ BANNED PHRASES: "not a match", "no match", "doesn't match", "not directly", "not related"
+
 ❌ BAD: "Directly aligns with the user's bias for NewJeans and their collection goal of albums."
 ✅ GOOD: "Bias + album goal"
 
-❌ BAD: "This is a merchandise item (holder) not an album. It doesn't align with the primary collection goal."
-✅ GOOD: "Different item type"
+❌ BAD: "Not a direct bias match but could be interesting. Doesn't directly complete a NewJeans album goal."
+✅ GOOD: "Different group"
+
+❌ BAD: "No bias match and not directly related to your album collection goal."
+✅ GOOD: "Off-bias merch"
 
 ❌ BAD: "Doesn't match your goal"
 ✅ GOOD: "Different group"
 
-REMEMBER: Focus on what MATTERS to them (their bias, their goals), NOT on criticizing what doesn't!
+REMEMBER: NEVER say what something is NOT. Only say what it IS! Focus on facts, not negatives!
 
 **EXAMPLE OUTPUT STRUCTURE:**
 
@@ -1422,15 +1438,18 @@ Output:
 
 ❌ **BAD Examples (NEVER DO THIS):**
 
-BAD reasoning (TOO LONG, COLD, ANALYTICAL, NEGATIVE):
-❌ "Directly aligns with the user's bias for NewJeans and their collection goal of albums."
-❌ "While not a direct bias match, TVXQ is a significant K-Pop group. It fulfills a collection goal (potentially) and could be valuable."
-❌ "This is a merchandise item (holder) not an album. It doesn't align with the primary collection goal or bias."
-❌ "Matches your bias, adds to collection but doesn't complete a set"
-❌ "Common item, no special collection value"
-❌ "Doesn't match your goal" ← NEGATIVE!
-❌ "Not aligned with your bias" ← NEGATIVE!
-❌ "Won't help your collection" ← NEGATIVE!
+BAD reasoning (TOO LONG, COLD, ANALYTICAL, NEGATIVE - USES "NOT" AND "DOESN'T"):
+❌ "Direct bias match! You're collecting NewJeans albums, making this a top priority." ← TOO LONG!
+❌ "Not a direct bias match but could be interesting. Doesn't directly complete a NewJeans album goal." ← NEGATIVE!
+❌ "No bias match and not directly related to your album collection goal. A smaller, non-album item." ← NEGATIVE!
+❌ "Directly aligns with the user's bias for NewJeans and their collection goal of albums." ← TOO LONG!
+❌ "While not a direct bias match, TVXQ is a significant K-Pop group." ← NEGATIVE!
+❌ "This is a merchandise item (holder) not an album. It doesn't align with the primary collection goal or bias." ← NEGATIVE!
+❌ "Matches your bias, adds to collection but doesn't complete a set" ← USES "DOESN'T"!
+❌ "Common item, no special collection value" ← NEGATIVE!
+❌ "Doesn't match your goal" ← BANNED WORD "DOESN'T"!
+❌ "Not aligned with your bias" ← BANNED WORD "NOT"!
+❌ "Won't help your collection" ← BANNED WORD "WON'T"!
 
 GOOD reasoning (2-4 WORDS, WARM, POSITIVE/NEUTRAL):
 ✅ "Bias + album goal"
@@ -1446,6 +1465,13 @@ Other BAD phrases:
 ❌ "Save money for later" ← MONEY TALK!
 ❌ "Check out Ktown4u for deals" ← STORE NAME!
 ❌ "aligns with", "fulfills", "potentially", "primary", "significant" ← COLD WORDS!
+
+🚨 FINAL WARNING BEFORE YOU RESPOND:
+- Did you check EVERY reasoning for the words "not", "doesn't", "isn't", "no"? ❌ REMOVE THEM!
+- Is EVERY reasoning 2-4 words MAXIMUM? Check the length!
+- Did you use ONLY positive or neutral language? NO NEGATIVES!
+- Example: Instead of "Not a bias match" → Use "Different group"
+- Example: Instead of "Doesn't complete your goal" → Use "Off-bias item"
 
 Return ONLY clean JSON. No markdown, no extra text.`;
 
@@ -1463,9 +1489,10 @@ Return ONLY clean JSON. No markdown, no extra text.`;
               language: 'en'
             });
 
-        // Cache the session for next time
+        // Cache the session and version for next time
         cachedAISession = session;
-        console.log('🐷 AI session created and cached:', session);
+        cachedPromptVersion = PROMPT_VERSION;
+        console.log('🐷 AI session created and cached (version:', PROMPT_VERSION, '):', session);
       } else {
         console.log('🐷 Using CACHED AI session (much faster!)');
       }
