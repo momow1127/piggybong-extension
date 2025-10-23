@@ -1015,7 +1015,7 @@
 
   // Cache AI session to avoid recreating it every time (speeds up analysis)
   // IMPORTANT: Change this version number when you update the prompt to force cache refresh
-  const PROMPT_VERSION = 'v4.5-dual-transform';
+  const PROMPT_VERSION = 'v4.5-dual-transform-debug';
   let cachedAISession = null;
   let cachedPromptVersion = null;
 
@@ -1205,8 +1205,15 @@ Analyze and return JSON only.`;
       if (jsonMatch) {
         let parsed = JSON.parse(jsonMatch[0]);
         console.log('🐷 Parsed JSON:', parsed);
+        console.log('🐷 DEBUG - JSON keys:', Object.keys(parsed));
 
         // TRANSFORMATION LAYER: Handle Gemini Nano's preferred formats
+        console.log('🐷 DEBUG - Checking transformations:', {
+          hasCartAnalysis: !!parsed.cart_analysis,
+          hasCart: !!parsed.cart,
+          isCartArray: Array.isArray(parsed.cart),
+          hasItems: !!parsed.items
+        });
 
         // Format 1: {user_bias, collection_goal, cart_analysis: {relevant_items, non_relevant_items}}
         if (parsed.cart_analysis && !parsed.items) {
