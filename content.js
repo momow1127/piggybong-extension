@@ -1015,7 +1015,7 @@
 
   // Cache AI session to avoid recreating it every time (speeds up analysis)
   // IMPORTANT: Change this version number when you update the prompt to force cache refresh
-  const PROMPT_VERSION = 'v2.0-positive-tone';
+  const PROMPT_VERSION = 'v2.1-optimized';
   let cachedAISession = null;
   let cachedPromptVersion = null;
 
@@ -1225,53 +1225,11 @@ RULES - TONE IS EVERYTHING!
 - Never write multiple clauses or complex sentences
 - Never criticize their choices — just help them prioritize what matters MOST
 
-**TONE EXAMPLES - GOOD vs BAD:**
-
-For reasoning (2-4 words):
-❌ BAD (cold, analytical): "No bias match, doesn't complete NewJeans album collection goal"
-✅ GOOD (warm, simple): "Off-bias"
-
-❌ BAD (talking ABOUT user): "This is a Stray Kids item which doesn't align with your NewJeans preference"
-✅ GOOD (warm, simple): "Off-bias"
-
-❌ BAD (third person): "TVXQ is unrelated to user's preference"
-✅ GOOD (simple fact): "Off-bias"
-
-❌ BAD (long explanation): "Doesn't match your bias or complete your collection"
-✅ GOOD (2-3 words): "Off-bias item"
-
-❌ BAD (negative about off-bias): "Doesn't match your priority"
-✅ GOOD (neutral): "Different group"
-
-For overallInsight (5-8 words):
-❌ BAD (cold, clinical): "You're browsing albums from groups outside of your preferred NewJeans"
-✅ GOOD (warm, positive): "Exploring other groups too"
-
-❌ BAD (judgmental): "The cart doesn't align with your goal of collecting NewJeans albums"
-✅ GOOD (encouraging): "Focus on NewJeans first"
-
-❌ BAD (analytical): "It seems you might be exploring other K-Pop merchandise"
-✅ GOOD (friendly): "Branching out from NewJeans"
-
-❌ BAD (negative): "These items won't help your NewJeans collection"
-✅ GOOD (positive): "Your NewJeans album is top priority"
-
-❌ BAD (discouraging multi-stanning): "Stick to your bias only"
-✅ GOOD (supportive): "Multi-stanning or just exploring"
-
-❌ BAD (negative about off-goal): "This doesn't fit your collection goal"
-✅ GOOD (focus on what matters): "Your albums are the priority"
-
-❌ BAD (critical): "Most of these don't match your goal"
-✅ GOOD (positive): "Focus on your top priorities"
-
-Remember: NEVER criticize their choices! Just help them see what matters MOST to them. Multi-stanning is totally normal!
-
 --------------------------------------------
-EXAMPLES
+EXAMPLES (Keep reasoning 2-4 words!)
 --------------------------------------------
-**Example 1: Multi-Stan Cart (Positive about exploring!)**
-Input: Cart has 3 NewJeans items + 1 Stray Kids item (user's bias is NewJeans)
+**Example 1: Mixed Cart**
+Input: Cart has NewJeans items + Stray Kids item (user's bias is NewJeans)
 Output:
 {
   "items": [
@@ -1323,117 +1281,7 @@ Output:
     }
   ],
   "overallInsight": "Both are high priority",
-  "priorityTip": "Must-haves for your collection",
-}
-
-**Example 3: Single Item - High Priority**
-Input: Cart has 1 item that matches bias and completes set (user's bias is aespa)
-Output:
-{
-  "items": [
-    {
-      "name": "aespa MY WORLD - Final member photocard",
-      "priority": "HIGH",
-      "reasoning": "Completes your set",
-      "score": 4
-    }
-  ],
-  "overallInsight": "This completes your collection",
-  "priorityTip": "Must-have for the set",
-}
-
-**Example 4: Single Item - Off-Bias (Multi-stanning is OK!)**
-Input: Cart has 1 Stray Kids item (user's bias is NewJeans)
-Output:
-{
-  "items": [
-    {
-      "name": "Stray Kids 5-STAR Album",
-      "priority": "LOW",
-      "reasoning": "Different group",
-      "score": 0
-    }
-  ],
-  "overallInsight": "Exploring Stray Kids too",
-  "priorityTip": "Multi-stanning or just browsing",
-}
-
-**Example 5: All Items Same Priority (All Medium)**
-Input: Cart has 3 items, all match bias but none complete sets (user's bias is IVE)
-Output:
-{
-  "items": [
-    {
-      "name": "IVE Liz photocard",
-      "priority": "MEDIUM",
-      "reasoning": "Bias match",
-      "score": 2
-    },
-    {
-      "name": "IVE keyring",
-      "priority": "MEDIUM",
-      "reasoning": "Bias merch",
-      "score": 2
-    },
-    {
-      "name": "IVE poster",
-      "priority": "MEDIUM",
-      "reasoning": "Bias item",
-      "score": 2
-    }
-  ],
-  "overallInsight": "All IVE items match your bias",
-  "priorityTip": "Which feels most essential",
-}
-
-**Example 6: Duplicate Versions**
-Input: Cart has 3 versions of same album (user's bias is BLACKPINK)
-Output:
-{
-  "items": [
-    {
-      "name": "Born Pink - Version A",
-      "priority": "HIGH",
-      "reasoning": "Bias + completes set",
-      "score": 3
-    },
-    {
-      "name": "Born Pink - Version B",
-      "priority": "MEDIUM",
-      "reasoning": "Duplicate version",
-      "score": 2
-    },
-    {
-      "name": "Born Pink - Digipack",
-      "priority": "MEDIUM",
-      "reasoning": "Another version",
-      "score": 2
-    }
-  ],
-  "overallInsight": "Three Born Pink versions",
-  "priorityTip": "Collecting all versions",
-}
-
-**Example 7: No Bias Set**
-Input: Cart has various items, user didn't set bias
-Output:
-{
-  "items": [
-    {
-      "name": "NewJeans Get Up Album - Limited Edition",
-      "priority": "MEDIUM",
-      "reasoning": "Limited edition",
-      "score": 1
-    },
-    {
-      "name": "IVE poster",
-      "priority": "LOW",
-      "reasoning": "Common item",
-      "score": 0
-    }
-  ],
-  "overallInsight": "That limited album stands out",
-  "priorityTip": "Which group excites you most",
+  "priorityTip": "Must-haves for your collection"
 }
 
 ❌ **BAD Examples (NEVER DO THIS):**
