@@ -1015,7 +1015,7 @@
 
   // Cache AI session to avoid recreating it every time (speeds up analysis)
   // IMPORTANT: Change this version number when you update the prompt to force cache refresh
-  const PROMPT_VERSION = 'v2.1-optimized';
+  const PROMPT_VERSION = 'v2.2-no-emoji';
   let cachedAISession = null;
   let cachedPromptVersion = null;
 
@@ -1376,18 +1376,16 @@ Use the priority scoring system:
 - Completes collection set: +2 points
 - Limited/rare edition: +1 point
 - Matches collection goal: +1 point
-Score 3-6 = HIGH 🔥, 1-2 = MEDIUM ✅, 0 = LOW 💭
+Score 3-6 = HIGH, 1-2 = MEDIUM, 0 = LOW
 
 IMPORTANT: Return ONLY the JSON object with these EXACT fields:
 - items (array of objects, one for EACH cart item):
   - name (string: item name)
   - priority (string: "HIGH" or "MEDIUM" or "LOW")
-  - badge (string: "🔥" or "✅" or "💭")
   - reasoning (string: why this priority - be specific!)
   - score (number: 0-6 based on scoring system)
 - overallInsight (string: 2-3 sentences overall cart summary. Use second person!)
 - priorityTip (string: A helpful question or prompt, under 20 words)
-- emojiSet (string: 2-3 emojis matching the vibe)
 
 Return ONLY clean JSON. No markdown, no extra text.`;
       } else {
@@ -1404,18 +1402,16 @@ Use the priority scoring system:
 - Completes collection set: +2 points
 - Limited/rare edition: +1 point
 - Matches collection goal: +1 point
-Score 3-6 = HIGH 🔥, 1-2 = MEDIUM ✅, 0 = LOW 💭
+Score 3-6 = HIGH, 1-2 = MEDIUM, 0 = LOW
 
 IMPORTANT: Return ONLY the JSON object with these EXACT fields:
 - items (array with one object):
   - name (string: product name)
   - priority (string: "HIGH" or "MEDIUM" or "LOW")
-  - badge (string: "🔥" or "✅" or "💭")
   - reasoning (string: why this priority - be specific!)
   - score (number: 0-6 based on scoring system)
 - overallInsight (string: 2-3 sentences about this product. Use second person!)
 - priorityTip (string: A helpful question or prompt, under 20 words)
-- emojiSet (string: 2-3 emojis matching the vibe)
 
 Return ONLY clean JSON. No markdown, no extra text.`;
       }
@@ -1437,7 +1433,7 @@ Return ONLY clean JSON. No markdown, no extra text.`;
             items: parsed.items,
             overallInsight: parsed.overallInsight,
             priorityTip: parsed.priorityTip,
-            emojiSet: parsed.emojiSet || '🔥✅💭'
+            emojiSet: parsed.emojiSet || ''
           };
         } else {
           console.warn('🐷 ⚠️ AI returned JSON but missing required fields:', {
