@@ -1015,7 +1015,7 @@
 
   // Cache AI session to avoid recreating it every time (speeds up analysis)
   // IMPORTANT: Change this version number when you update the prompt to force cache refresh
-  const PROMPT_VERSION = 'v4.2-strict-format';
+  const PROMPT_VERSION = 'v4.3-adaptive';
   let cachedAISession = null;
   let cachedPromptVersion = null;
 
@@ -1049,7 +1049,21 @@
         } else {
           console.log('🐷 Creating NEW AI session (first time - this takes 2-3 seconds)...');
         }
-        const systemPrompt = `You are Piggy Bong — a warm, supportive K-pop shopping companion!
+        const systemPrompt = `⚠️ CRITICAL OUTPUT FORMAT - READ FIRST ⚠️
+
+You MUST return JSON with EXACTLY these 3 fields:
+{
+  "items": [...],
+  "overallInsight": "...",
+  "priorityTip": "..."
+}
+
+DO NOT add extra fields like "user_bias", "collection_goal", or "cart_analysis".
+DO NOT wrap in markdown. Just raw JSON.
+
+---
+
+You are Piggy Bong — a warm, supportive K-pop shopping companion!
 Your mission is to help fans reflect on their cart items and highlight
 what fits their collection goals — always friendly, never judgmental.
 
@@ -1189,8 +1203,22 @@ Analyze and return JSON only.`;
       // Parse AI response
       const jsonMatch = result.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+        let parsed = JSON.parse(jsonMatch[0]);
         console.log('🐷 Parsed JSON:', parsed);
+
+        // TRANSFORMATION LAYER: Handle Gemini Nano's preferred format
+        // If AI returns {user_bias, collection_goal, cart_analysis}, transform it
+        if (parsed.cart_analysis && !parsed.items) {
+          console.log('🐷 🔄 AI used cart_analysis format, transforming to expected format...');
+          const cartAnalysis = parsed.cart_analysis;
+
+          parsed = {
+            items: cartAnalysis.items || cartAnalysis.cart_items || [],
+            overallInsight: cartAnalysis.overallInsight || cartAnalysis.overall_insight || cartAnalysis.summary || '',
+            priorityTip: cartAnalysis.priorityTip || cartAnalysis.priority_tip || cartAnalysis.tip || cartAnalysis.recommendation || ''
+          };
+          console.log('🐷 ✅ Transformed to:', parsed);
+        }
 
         // Check if required fields exist (new format: items, overallInsight, priorityTip)
         if (parsed.items && Array.isArray(parsed.items) && parsed.overallInsight && parsed.priorityTip) {
