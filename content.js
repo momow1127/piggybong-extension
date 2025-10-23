@@ -1015,7 +1015,7 @@
 
   // Cache AI session to avoid recreating it every time (speeds up analysis)
   // IMPORTANT: Change this version number when you update the prompt to force cache refresh
-  const PROMPT_VERSION = 'v4.0-ultra-minimal';
+  const PROMPT_VERSION = 'v4.1-truly-minimal';
   let cachedAISession = null;
   let cachedPromptVersion = null;
 
@@ -1161,57 +1161,20 @@ Return ONLY valid JSON. No markdown, no extra commentary.`;
         ).join('\n');
 
         prompt = `${personalizationContext}
-CART ANALYSIS:
+
+## CART
 ${itemsList}
-Total: ${productInfo.total}
-Total Items: ${productInfo.itemCount}
-Page: ${pageUrl}
+Total: ${productInfo.total} | Items: ${productInfo.itemCount}
 
-Analyze this cart and rank EACH item with HIGH/MEDIUM/LOW priority badges!
-
-Use the priority scoring system:
-- Bias match: +2 points
-- Completes collection set: +2 points
-- Limited/rare edition: +1 point
-- Matches collection goal: +1 point
-Score 3-6 = HIGH, 1-2 = MEDIUM, 0 = LOW
-
-IMPORTANT: Return ONLY the JSON object with these EXACT fields:
-- items (array of objects, one for EACH cart item):
-  - name (string: item name)
-  - priority (string: "HIGH" or "MEDIUM" or "LOW")
-  - reasoning (string: why this priority - be specific!)
-  - score (number: 0-6 based on scoring system)
-- overallInsight (string: 2-3 sentences overall cart summary. Use second person!)
-- priorityTip (string: A helpful question or prompt, under 20 words)
-
-Return ONLY clean JSON. No markdown, no extra text.`;
+Analyze and return JSON only.`;
       } else {
         prompt = `${personalizationContext}
-PRODUCT ANALYSIS:
-Product: ${productInfo.name}
+
+## PRODUCT
+${productInfo.name}
 Price: ${productInfo.price}
-Page: ${pageUrl}
 
-Analyze this purchase and rank it with a HIGH/MEDIUM/LOW priority badge!
-
-Use the priority scoring system:
-- Bias match: +2 points
-- Completes collection set: +2 points
-- Limited/rare edition: +1 point
-- Matches collection goal: +1 point
-Score 3-6 = HIGH, 1-2 = MEDIUM, 0 = LOW
-
-IMPORTANT: Return ONLY the JSON object with these EXACT fields:
-- items (array with one object):
-  - name (string: product name)
-  - priority (string: "HIGH" or "MEDIUM" or "LOW")
-  - reasoning (string: why this priority - be specific!)
-  - score (number: 0-6 based on scoring system)
-- overallInsight (string: 2-3 sentences about this product. Use second person!)
-- priorityTip (string: A helpful question or prompt, under 20 words)
-
-Return ONLY clean JSON. No markdown, no extra text.`;
+Analyze and return JSON only.`;
       }
 
       console.log('🐷 Sending prompt to AI:', prompt);
