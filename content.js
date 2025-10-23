@@ -1015,7 +1015,7 @@
 
   // Cache AI session to avoid recreating it every time (speeds up analysis)
   // IMPORTANT: Change this version number when you update the prompt to force cache refresh
-  const PROMPT_VERSION = 'v4.1-truly-minimal';
+  const PROMPT_VERSION = 'v4.2-strict-format';
   let cachedAISession = null;
   let cachedPromptVersion = null;
 
@@ -1082,6 +1082,9 @@ ${PersonalizationHelper.getBias() ? '' : '(No bias set — focus on edition/coll
 ❌ No money words: budget, price, cheap, expensive, afford, save
 
 ## OUTPUT FORMAT (JSON only)
+
+CRITICAL: Use EXACTLY these field names, no others!
+
 {
   "items": [
     {
@@ -1119,6 +1122,8 @@ ${PersonalizationHelper.getBias() ? '' : '(No bias set — focus on edition/coll
 If no scorable items:
 { "items": [], "overallInsight": "No scorable items yet", "priorityTip": "Add items to cart first 💕" }
 
+REMEMBER: Return object with ONLY "items", "overallInsight", "priorityTip" fields.
+No "user_bias", "collection_goal", "cart_analysis" or other fields.
 Return ONLY valid JSON. No markdown, no extra commentary.`;
 
         // Use appropriate API based on what's available
