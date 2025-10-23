@@ -1128,4 +1128,450 @@ Score each item 0-6 points based on:
 
 REMEMBER: NEVER say what something is NOT. Only say what it IS! Focus on facts, not negatives!
 
+**EXAMPLE OUTPUT STRUCTURE:**
+
+If cart has 3 items:
+
+Item 1: NewJeans "Get Up" Album
+Priority: HIGH
+Why: Completes your set
+
+Item 2: NewJeans Haerin photocard
+Priority: MEDIUM
+Why: Bias match
+
+Item 3: Stray Kids holder
+Priority: LOW
+Why: Off-bias
+
+**Then add overall insight (5-8 words max, friendly tone!):**
+"That album completes your collection"
+
 --------------------------------------------
+OUTPUT FORMAT (JSON ONLY)
+--------------------------------------------
+⚠️ FINAL CHECK BEFORE RESPONDING:
+- Did you analyze EACH item individually with a priority badge? ✅
+- Does your output include specific reasoning for each item's score? ✅
+- Does your "overallInsight" use "You" or "Your" (second person)? ✅
+- Does it contain "This user" or "They"? ❌ FIX IT!
+
+Return JSON with these EXACT field names:
+
+{
+  "items": [
+    {
+      "name": "Item name from cart",
+      "priority": "HIGH" | "MEDIUM" | "LOW",
+      "reasoning": "2-4 words ONLY! Keep it positive!",
+      "score": 0-6
+    }
+  ],
+  "overallInsight": "5-8 words max! Warm, supportive tone!",
+  "priorityTip": "A helpful question or prompt (5-8 words)"
+}
+
+Example:
+{
+  "items": [
+    {
+      "name": "NewJeans Get Up Album",
+      "priority": "HIGH",
+      "reasoning": "Completes your set",
+      "score": 4
+    },
+    {
+      "name": "NewJeans Haerin photocard",
+      "priority": "MEDIUM",
+      "reasoning": "Bias match",
+      "score": 2
+    },
+    {
+      "name": "Stray Kids holder",
+      "priority": "LOW",
+      "reasoning": "Off-bias",
+      "score": 0
+    }
+  ],
+  "overallInsight": "That album completes your collection",
+  "priorityTip": "Which items feel essential"
+}
+
+--------------------------------------------
+RULES - TONE IS EVERYTHING!
+--------------------------------------------
+✅ DO:
+- ALWAYS use second person ("you", "your") — talk TO them, not ABOUT them
+- BE ULTRA CONCISE — 2-4 words for reasoning, 5-8 words for insight
+- Keep it warm, friendly, supportive — like a bestie!
+- Use positive or neutral language only
+- State facts simply, don't explain negatives
+- For LOW priority: say "Off-bias" NOT "doesn't match your preference"
+- Use emojis sparingly (2-3 max)
+
+❌ DON'T - BANNED PHRASES:
+- Never use third person ("This user", "They", "The user")
+- Never write long explanations — BE BRIEF!
+- Never use negative/judgmental language:
+  ❌ "doesn't align", "unrelated to", "outside of", "doesn't complete", "doesn't fit"
+  ❌ "limited relevance", "no indication", "doesn't match your goal", "not your priority"
+  ❌ "isn't interested", "not aligned", "doesn't fit your collection"
+  ❌ "won't help", "not relevant", "not useful", "not important"
+  ❌ "this item is", "this is a", "not a direct match"
+- Never use money words (budget, cost, save, price, afford)
+- Never mention store names (Ktown4u, Weverse, Amazon)
+- Never give generic advice ("browse more", "keep exploring")
+- Never sound clinical, analytical, or scolding
+- Never write multiple clauses or complex sentences
+- Never criticize their choices — just help them prioritize what matters MOST
+
+🚨 FINAL WARNING BEFORE YOU RESPOND:
+- Did you check EVERY reasoning for the words "not", "doesn't", "isn't", "no"? ❌ REMOVE THEM!
+- Is EVERY reasoning 2-4 words MAXIMUM? Check the length!
+- Did you use ONLY positive or neutral language? NO NEGATIVES!
+- Example: Instead of "Not a bias match" → Use "Different group"
+- Example: Instead of "Doesn't complete your goal" → Use "Off-bias item"
+
+Return ONLY clean JSON. No markdown, no extra text.`;
+
+        // Use appropriate API based on what's available
+        session = hasNewAPI
+          ? await LanguageModel.create({
+              systemPrompt,
+              language: 'en',
+              expectedOutputs: [
+                { type: "text", languages: ["en"] }
+              ]
+            })
+          : await window.ai.languageModel.create({
+              systemPrompt,
+              language: 'en'
+            });
+
+        // Cache the session and version for next time
+        cachedAISession = session;
+        cachedPromptVersion = PROMPT_VERSION;
+        console.log('🐷 AI session created and cached (version:', PROMPT_VERSION, '):', session);
+      } else {
+        console.log('🐷 Using CACHED AI session (much faster!)');
+      }
+
+      // Defensive null check (should not happen due to earlier check, but just in case)
+      if (!productInfo) {
+        console.error('🐷 ❌ productInfo is null in analyzeWithAI');
+        throw new Error('No product information available');
+      }
+
+      // Build detailed prompt based on cart or single product
+      let prompt = '';
+
+      // Add personalization context if available
+      const personalizationContext = PersonalizationHelper.getPersonalizationContext();
+
+      if (productInfo.isCart && productInfo.items) {
+        const itemsList = productInfo.items.map((item, i) =>
+          `Item ${i+1}: ${item.name} (Qty: ${item.quantity}, Price: ${item.price})`
+        ).join('\n');
+
+        prompt = `${personalizationContext}
+CART ANALYSIS:
+${itemsList}
+Total: ${productInfo.total}
+Total Items: ${productInfo.itemCount}
+Page: ${pageUrl}
+
+Analyze this cart and rank EACH item with HIGH/MEDIUM/LOW priority badges!
+
+Use the priority scoring system:
+- Bias match: +2 points
+- Completes collection set: +2 points
+- Limited/rare edition: +1 point
+- Matches collection goal: +1 point
+Score 3-6 = HIGH, 1-2 = MEDIUM, 0 = LOW
+
+IMPORTANT: Return ONLY the JSON object with these EXACT fields:
+- items (array of objects, one for EACH cart item):
+  - name (string: item name)
+  - priority (string: "HIGH" or "MEDIUM" or "LOW")
+  - reasoning (string: why this priority - be specific!)
+  - score (number: 0-6 based on scoring system)
+- overallInsight (string: 2-3 sentences overall cart summary. Use second person!)
+- priorityTip (string: A helpful question or prompt, under 20 words)
+
+Return ONLY clean JSON. No markdown, no extra text.`;
+      } else {
+        prompt = `${personalizationContext}
+PRODUCT ANALYSIS:
+Product: ${productInfo.name}
+Price: ${productInfo.price}
+Page: ${pageUrl}
+
+Analyze this purchase and rank it with a HIGH/MEDIUM/LOW priority badge!
+
+Use the priority scoring system:
+- Bias match: +2 points
+- Completes collection set: +2 points
+- Limited/rare edition: +1 point
+- Matches collection goal: +1 point
+Score 3-6 = HIGH, 1-2 = MEDIUM, 0 = LOW
+
+IMPORTANT: Return ONLY the JSON object with these EXACT fields:
+- items (array with one object):
+  - name (string: product name)
+  - priority (string: "HIGH" or "MEDIUM" or "LOW")
+  - reasoning (string: why this priority - be specific!)
+  - score (number: 0-6 based on scoring system)
+- overallInsight (string: 2-3 sentences about this product. Use second person!)
+- priorityTip (string: A helpful question or prompt, under 20 words)
+
+Return ONLY clean JSON. No markdown, no extra text.`;
+      }
+
+      console.log('🐷 Sending prompt to AI:', prompt);
+      const result = await session.prompt(prompt);
+      console.log('🐷 AI raw response:', result);
+
+      // Parse AI response
+      const jsonMatch = result.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        console.log('🐷 Parsed JSON:', parsed);
+
+        // Check if required fields exist (new format: items, overallInsight, priorityTip)
+        if (parsed.items && Array.isArray(parsed.items) && parsed.overallInsight && parsed.priorityTip) {
+          console.log('🐷 ✅ AI priority analysis successful!');
+          return {
+            items: parsed.items,
+            overallInsight: parsed.overallInsight,
+            priorityTip: parsed.priorityTip,
+            emojiSet: parsed.emojiSet || ''
+          };
+        } else {
+          console.warn('🐷 ⚠️ AI returned JSON but missing required fields:', {
+            hasItems: !!parsed.items,
+            isItemsArray: Array.isArray(parsed.items),
+            hasOverallInsight: !!parsed.overallInsight,
+            hasPriorityTip: !!parsed.priorityTip
+          });
+        }
+      }
+
+      // Fallback if JSON parsing fails or missing required fields
+      console.warn('🐷 ⚠️ Using fallback response');
+      return {
+        items: [{
+          name: 'Your items',
+          priority: 'MEDIUM',
+          badge: '✅',
+          reasoning: 'Looking good! Check which items match your collection goals.',
+          score: 2
+        }],
+        overallInsight: 'Ooh, your cart is looking good! 🛍️ Love the K-pop energy in here! ✨',
+        priorityTip: 'Which items are you most excited about? Those are your priorities!',
+        emojiSet: '🛍️💜✨'
+      };
+
+    } catch (error) {
+      console.error('AI error:', error);
+      throw error;
+    }
+  }
+
+  // Function to update button state based on cart contents
+  function updateButtonState() {
+    if (!floatingContainer) return;
+
+    const itemCount = getCartItemCount();
+    const floatingBtn = floatingContainer.querySelector('#piggybong-floating-btn');
+    const btnText = floatingBtn?.querySelector('.piggybong-btn-text');
+
+    // Always keep button text consistent and fully visible
+    if (btnText) btnText.textContent = 'Should I Buy This?';
+
+    // Log cart state for debugging
+    if (itemCount === 0) {
+      console.log('🐷 Cart is empty - button will show empty cart message');
+    } else {
+      console.log(`🐷 Cart has ${itemCount === -1 ? 'items (unknown count)' : itemCount + ' items'} - button ready for analysis`);
+    }
+  }
+
+  // Function to handle empty cart click
+  function handleEmptyCartClick(e) {
+    const itemCount = getCartItemCount();
+
+    if (itemCount === 0) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Show gentle message
+      const modal = document.createElement('div');
+      modal.className = 'piggybong-modal show';
+      modal.innerHTML = `
+        <div class="piggybong-modal-overlay"></div>
+        <div class="piggybong-modal-content" style="max-width: 380px;">
+          <div class="piggybong-modal-header">
+            <div class="piggybong-brand">
+              <img src="${chrome.runtime.getURL('piggybong.png')}" alt="Piggy Bong" class="piggybong-header-logo">
+              <span class="piggybong-brand-name">Piggy Bong</span>
+            </div>
+            <button class="piggybong-modal-close-btn" aria-label="Close">×</button>
+          </div>
+          <div class="piggybong-modal-body">
+            <div style="text-align: center; padding: 16px;">
+              <div style="font-size: 48px; margin-bottom: 16px;">🛒</div>
+              <h3 style="font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 0 0 12px 0;">Nothing in your cart yet!</h3>
+              <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0;">
+                Add some K-pop items and I'll be here to help you decide before checkout
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      const closeBtn = modal.querySelector('.piggybong-modal-close-btn');
+      const overlay = modal.querySelector('.piggybong-modal-overlay');
+
+      const closeModal = (e) => {
+        if (e) e.stopPropagation();
+        modal.classList.add('closing');
+        setTimeout(() => modal.remove(), 300);
+      };
+
+      closeBtn.addEventListener('click', closeModal);
+      overlay.addEventListener('click', closeModal);
+
+      return false;
+    }
+  }
+
+  // ===========================================
+  // Cart Detection & Initialization
+  // ===========================================
+
+  function initializePiggyBong() {
+    console.log('🐷 Piggy Bong: Checking if this is a cart page...');
+
+    // Strict mode: only show on cart pages
+    if (!isCartPage()) {
+      console.log('🐷 Not a cart page - button will not be shown');
+      return;
+    }
+
+    console.log('🐷 Cart page detected! Initializing button...');
+    createFloatingButton();
+    updateButtonState();
+
+    // Add empty cart handler to the button
+    const floatingBtn = document.getElementById('piggybong-floating-btn');
+    if (floatingBtn) {
+      floatingBtn.addEventListener('click', handleEmptyCartClick, true); // Capture phase
+    }
+  }
+
+  // ===========================================
+  // MutationObserver for Dynamic Cart Detection
+  // ===========================================
+
+  let reCheckTimeout = null;
+
+  function scheduleReCheck() {
+    // Debounce: only re-check after 2 seconds of no mutations
+    clearTimeout(reCheckTimeout);
+    reCheckTimeout = setTimeout(() => {
+      console.log('🐷 Re-checking cart state...');
+
+      // If cart page detected and button doesn't exist yet, create it
+      if (isCartPage() && !isButtonCreated) {
+        console.log('🐷 Cart appeared dynamically - creating button now!');
+        createFloatingButton();
+        updateButtonState();
+
+        const floatingBtn = document.getElementById('piggybong-floating-btn');
+        if (floatingBtn) {
+          floatingBtn.addEventListener('click', handleEmptyCartClick, true);
+        }
+      }
+
+      // If button exists, update its state
+      if (isButtonCreated) {
+        updateButtonState();
+      }
+    }, 2000);
+  }
+
+  // Watch for DOM changes (for AJAX cart updates)
+  const observer = new MutationObserver((mutations) => {
+    // Only care about meaningful changes (text/structure)
+    const hasSignificantChange = mutations.some(mutation =>
+      mutation.type === 'childList' ||
+      (mutation.type === 'characterData' && mutation.target.textContent.length > 10)
+    );
+
+    if (hasSignificantChange) {
+      scheduleReCheck();
+    }
+  });
+
+  // Start observing after DOM is ready
+  if (document.body) {
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+    console.log('🐷 MutationObserver started - watching for dynamic cart updates');
+  }
+
+  // Initial check on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePiggyBong);
+  } else {
+    initializePiggyBong();
+  }
+
+  console.log('🐷 Piggy Bong: Content script loaded');
+
+  // Listen for messages from toolbar to trigger floating button click or close modal
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "openModal") {
+      console.log('🐷 Received openModal message from toolbar');
+
+      // Check if modal is already open
+      const existingModal = document.getElementById('piggybong-modal') || document.getElementById('piggybong-onboarding-modal');
+
+      if (existingModal) {
+        // Modal is open, close it
+        console.log('🐷 Modal already open, closing it');
+        existingModal.classList.add('closing');
+        setTimeout(() => existingModal.remove(), 300);
+        sendResponse({ success: true, action: 'closed' });
+      } else {
+        // Modal is not open, check if floating button exists
+        let floatingBtn = document.getElementById('piggybong-floating-btn');
+
+        // If button doesn't exist yet, create it first (user clicked toolbar before button loaded)
+        if (!floatingBtn && !isButtonCreated) {
+          console.log('🐷 Button not created yet, creating it now...');
+          createFloatingButton();
+          updateButtonState();
+          floatingBtn = document.getElementById('piggybong-floating-btn');
+        }
+
+        if (floatingBtn) {
+          // Directly trigger the modal instead of clicking button (to avoid empty cart handler)
+          console.log('🐷 Triggering modal directly...');
+          const pageText = document.body.innerText || '';
+          const pageUrl = window.location.href;
+          showPiggyBongModal(pageText, pageUrl);
+          sendResponse({ success: true, action: 'opened' });
+        } else {
+          console.error('🐷 Floating button could not be created!');
+          sendResponse({ success: false, error: 'Button could not be created' });
+        }
+      }
+    }
+    return true; // Keep message channel open for async response
+  });
+})();
