@@ -27,11 +27,12 @@ Built with **Chrome's Prompt API** and **Gemini Nano AI**, Piggy Bong runs fully
 **Technical highlights:**
 - **Smart cart extraction**: Parses product names, prices, and quantities from different K-pop store formats
 - **Priority scoring system**: 0-6 point scale based on bias match, collection completion, limited editions
-- **Warm AI personality**: Custom system prompt designed to sound like a supportive bestie, not a cold chatbot
-- **Session caching**: First analysis takes 3-5 seconds, subsequent clicks take 1-2 seconds
+- **Optimized AI prompt**: Ultra-minimal 80-line system prompt (reduced from 420 lines) for fast analysis
+- **Warm AI personality**: Custom prompt designed to sound like a supportive bestie, not a cold chatbot
+- **Session caching**: Reuses AI sessions with version tracking to speed up repeated analysis
 - **Multi-stan friendly**: Never judgmental about off-bias items — just helps prioritize
 
-The UI is intentionally minimal and friendly: a floating button, quick analysis, and compact priority badges that let the insight speak for itself.
+The UI is intentionally minimal and friendly: a floating button, quick analysis, and compact priority badges (HIGH/MEDIUM/LOW) that let the insight speak for itself.
 
 ---
 
