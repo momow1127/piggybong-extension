@@ -1015,7 +1015,7 @@
 
   // Cache AI session to avoid recreating it every time (speeds up analysis)
   // IMPORTANT: Change this version number when you update the prompt to force cache refresh
-  const PROMPT_VERSION = 'v3.0-minimal';
+  const PROMPT_VERSION = 'v3.1-clean';
   let cachedAISession = null;
   let cachedPromptVersion = null;
 
@@ -1114,38 +1114,15 @@ Score each item 0-6 points based on:
 ❌ BANNED WORDS: "not", "doesn't", "don't", "isn't", "aren't", "won't", "can't", "no"
 ❌ BANNED PHRASES: "not a match", "no match", "doesn't match", "not directly", "not related"
 
-❌ BAD: "Directly aligns with the user's bias for NewJeans and their collection goal of albums."
-✅ GOOD: "Bias + album goal"
-
-❌ BAD: "Not a direct bias match but could be interesting. Doesn't directly complete a NewJeans album goal."
-✅ GOOD: "Different group"
-
-❌ BAD: "No bias match and not directly related to your album collection goal."
-✅ GOOD: "Off-bias merch"
-
-❌ BAD: "Doesn't match your goal"
-✅ GOOD: "Different group"
+✅ GOOD REASONING EXAMPLES (2-4 words):
+- "Bias + album goal"
+- "Different group"
+- "Off-bias merch"
+- "Limited edition"
+- "Completes your set"
+- "Bias match"
 
 REMEMBER: NEVER say what something is NOT. Only say what it IS! Focus on facts, not negatives!
-
-**EXAMPLE OUTPUT STRUCTURE:**
-
-If cart has 3 items:
-
-Item 1: NewJeans "Get Up" Album
-Priority: HIGH
-Why: Completes your set
-
-Item 2: NewJeans Haerin photocard
-Priority: MEDIUM
-Why: Bias match
-
-Item 3: Stray Kids holder
-Priority: LOW
-Why: Off-bias
-
-**Then add overall insight (5-8 words max, friendly tone!):**
-"That album completes your collection"
 
 --------------------------------------------
 OUTPUT FORMAT (JSON ONLY)
