@@ -1015,7 +1015,7 @@
 
   // Cache AI session to avoid recreating it every time (speeds up analysis)
   // IMPORTANT: Change this version number when you update the prompt to force cache refresh
-  const PROMPT_VERSION = 'v4.4-transform-fix';
+  const PROMPT_VERSION = 'v4.5-dual-transform';
   let cachedAISession = null;
   let cachedPromptVersion = null;
 
@@ -1206,13 +1206,13 @@ Analyze and return JSON only.`;
         let parsed = JSON.parse(jsonMatch[0]);
         console.log('🐷 Parsed JSON:', parsed);
 
-        // TRANSFORMATION LAYER: Handle Gemini Nano's preferred format
-        // If AI returns {user_bias, collection_goal, cart_analysis}, transform it
+        // TRANSFORMATION LAYER: Handle Gemini Nano's preferred formats
+
+        // Format 1: {user_bias, collection_goal, cart_analysis: {relevant_items, non_relevant_items}}
         if (parsed.cart_analysis && !parsed.items) {
           console.log('🐷 🔄 AI used cart_analysis format, transforming to expected format...');
           const ca = parsed.cart_analysis;
 
-          // Combine relevant_items and non_relevant_items into our format
           const allItems = [];
 
           // Process relevant_items (HIGH priority)
@@ -1241,10 +1241,37 @@ Analyze and return JSON only.`;
 
           parsed = {
             items: allItems,
-            overallInsight: `Your ${parsed.user_bias} item is top priority 💎`,
+            overallInsight: `Your ${parsed.user_bias || 'bias'} item is top priority 💎`,
             priorityTip: 'Focus on your bias first 💜'
           };
-          console.log('🐷 ✅ Transformed to:', parsed);
+          console.log('🐷 ✅ Transformed from cart_analysis to:', parsed);
+        }
+
+        // Format 2: {user_bias, collection_goal, cart: [{artist, album_title, ...}]}
+        if (parsed.cart && Array.isArray(parsed.cart) && !parsed.items) {
+          console.log('🐷 🔄 AI used cart array format, transforming to expected format...');
+
+          const userBias = parsed.user_bias || PersonalizationHelper.getBias() || '';
+
+          const allItems = parsed.cart.map(item => {
+            const itemName = item.album_title || item.artist || item.name || 'Unknown item';
+            const artist = item.artist || '';
+            const isBiasMatch = userBias && artist.toLowerCase().includes(userBias.toLowerCase());
+
+            return {
+              name: artist ? `${artist} - ${itemName}` : itemName,
+              priority: isBiasMatch ? 'HIGH' : 'LOW',
+              reasoning: isBiasMatch ? 'Bias match' : 'Different group',
+              score: isBiasMatch ? 5 : 0
+            };
+          });
+
+          parsed = {
+            items: allItems,
+            overallInsight: `Your ${userBias || 'bias'} item is top priority 💎`,
+            priorityTip: 'Focus on your bias first 💜'
+          };
+          console.log('🐷 ✅ Transformed from cart array to:', parsed);
         }
 
         // Check if required fields exist (new format: items, overallInsight, priorityTip)
