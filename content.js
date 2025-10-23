@@ -1015,7 +1015,7 @@
 
   // Cache AI session to avoid recreating it every time (speeds up analysis)
   // IMPORTANT: Change this version number when you update the prompt to force cache refresh
-  const PROMPT_VERSION = 'v4.3-adaptive';
+  const PROMPT_VERSION = 'v4.4-transform-fix';
   let cachedAISession = null;
   let cachedPromptVersion = null;
 
@@ -1210,12 +1210,39 @@ Analyze and return JSON only.`;
         // If AI returns {user_bias, collection_goal, cart_analysis}, transform it
         if (parsed.cart_analysis && !parsed.items) {
           console.log('🐷 🔄 AI used cart_analysis format, transforming to expected format...');
-          const cartAnalysis = parsed.cart_analysis;
+          const ca = parsed.cart_analysis;
+
+          // Combine relevant_items and non_relevant_items into our format
+          const allItems = [];
+
+          // Process relevant_items (HIGH priority)
+          if (ca.relevant_items && Array.isArray(ca.relevant_items)) {
+            ca.relevant_items.forEach(item => {
+              allItems.push({
+                name: item.item_name || item.name || '',
+                priority: 'HIGH',
+                reasoning: 'Bias match',
+                score: 5
+              });
+            });
+          }
+
+          // Process non_relevant_items (LOW priority)
+          if (ca.non_relevant_items && Array.isArray(ca.non_relevant_items)) {
+            ca.non_relevant_items.forEach(item => {
+              allItems.push({
+                name: item.item_name || item.name || '',
+                priority: 'LOW',
+                reasoning: 'Different group',
+                score: 0
+              });
+            });
+          }
 
           parsed = {
-            items: cartAnalysis.items || cartAnalysis.cart_items || [],
-            overallInsight: cartAnalysis.overallInsight || cartAnalysis.overall_insight || cartAnalysis.summary || '',
-            priorityTip: cartAnalysis.priorityTip || cartAnalysis.priority_tip || cartAnalysis.tip || cartAnalysis.recommendation || ''
+            items: allItems,
+            overallInsight: `Your ${parsed.user_bias} item is top priority 💎`,
+            priorityTip: 'Focus on your bias first 💜'
           };
           console.log('🐷 ✅ Transformed to:', parsed);
         }
