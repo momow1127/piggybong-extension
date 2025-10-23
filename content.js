@@ -141,8 +141,19 @@ function showPiggyModal() {
 
   document.body.appendChild(modal);
 
-  modal.querySelector(".piggybong-modal-close-btn").onclick = () => modal.remove();
-  modal.querySelector(".piggybong-modal-overlay").onclick = () => modal.remove();
+  // Trigger animation
+  requestAnimationFrame(() => {
+    modal.classList.add("show");
+  });
+
+  modal.querySelector(".piggybong-modal-close-btn").onclick = () => {
+    modal.classList.add("closing");
+    setTimeout(() => modal.remove(), 300);
+  };
+  modal.querySelector(".piggybong-modal-overlay").onclick = () => {
+    modal.classList.add("closing");
+    setTimeout(() => modal.remove(), 300);
+  };
   modal.querySelector(".piggybong-settings-btn").onclick = () => {
     alert("Settings: Update your bias and goals in localStorage for now");
   };
