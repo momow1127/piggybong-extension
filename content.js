@@ -282,16 +282,42 @@
 
   // src/content/utils/personalization.js
   var PersonalizationHelper = {
+    // Legacy single bias support (kept for backward compatibility)
     getBias() {
       return localStorage.getItem("piggyBias") || null;
-    },
-    getCollectionGoal() {
-      return localStorage.getItem("piggyGoal") || null;
     },
     setBias(bias) {
       if (bias && bias.trim()) {
         localStorage.setItem("piggyBias", bias.trim());
       }
+    },
+    // New multi-group lineup support
+    getLineup() {
+      const stored = localStorage.getItem("piggyLineup");
+      return stored ? JSON.parse(stored) : [];
+    },
+    setLineup(lineup) {
+      if (Array.isArray(lineup) && lineup.length > 0) {
+        localStorage.setItem("piggyLineup", JSON.stringify(lineup));
+      }
+    },
+    // Priority item support
+    getPriority() {
+      const stored = localStorage.getItem("piggyPriority");
+      return stored ? JSON.parse(stored) : null;
+    },
+    setPriority(priority) {
+      if (priority && (priority.type || priority.types)) {
+        console.log("\u{1F50D} PersonalizationHelper.setPriority() saving:", priority);
+        localStorage.setItem("piggyPriority", JSON.stringify(priority));
+        console.log("\u{1F50D} Saved to localStorage. Reading back:", localStorage.getItem("piggyPriority"));
+      } else {
+        console.warn("\u{1F50D} setPriority() called but priority object invalid:", priority);
+      }
+    },
+    // Legacy goal support
+    getCollectionGoal() {
+      return localStorage.getItem("piggyGoal") || null;
     },
     setCollectionGoal(goal) {
       if (goal && goal.trim()) {
@@ -299,21 +325,31 @@
       }
     },
     hasPersonalization() {
-      return this.getBias() !== null || this.getCollectionGoal() !== null;
+      return this.getLineup().length > 0 || this.getBias() !== null || this.getPriority() !== null;
     },
     clearPersonalization() {
       localStorage.removeItem("piggyBias");
       localStorage.removeItem("piggyGoal");
+      localStorage.removeItem("piggyLineup");
+      localStorage.removeItem("piggyPriority");
     },
     getPersonalizationContext() {
-      const bias = this.getBias();
-      const goal = this.getCollectionGoal();
-      if (!bias && !goal) return "";
+      const lineup = this.getLineup();
+      const priority = this.getPriority();
+      const legacyBias = this.getBias();
+      if (lineup.length === 0 && !legacyBias && !priority) return "";
       let context = "\nPERSONALIZATION CONTEXT:\n";
-      if (bias) context += `User's bias: ${bias}
+      if (lineup.length > 0) {
+        context += `User's lineup: ${lineup.join(", ")}
 `;
-      if (goal) context += `User's collection goal: ${goal}
+      } else if (legacyBias) {
+        context += `User's bias: ${legacyBias}
 `;
+      }
+      if (priority) {
+        context += `Top priority: ${priority.name} (${priority.type})
+`;
+      }
       return context;
     }
   };
@@ -543,309 +579,110 @@
   }
 
   // src/content/ai/analyzeWithAI.js
-  var PROMPT_VERSION = "v3.1-clean";
-  var cachedAISession = null;
-  var cachedPromptVersion = null;
-  async function analyzeWithAI(pageText, pageUrl, productInfo) {
-    console.log("\u{1F437} analyzeWithAI() START");
-    console.log("\u{1F437} Checking window.ai:", window.ai);
-    console.log("\u{1F437} Checking LanguageModel:", typeof LanguageModel !== "undefined" ? LanguageModel : "undefined");
-    const hasNewAPI = typeof LanguageModel !== "undefined";
-    const hasOldAPI = window.ai && window.ai.languageModel;
-    if (!hasNewAPI && !hasOldAPI) {
-      console.error("\u{1F437} \u274C Chrome Built-in AI not available!");
-      throw new Error("AI not available - Chrome Built-in AI (Gemini Nano) not enabled");
-    }
-    console.log("\u{1F437} Using API:", hasNewAPI ? "LanguageModel (new)" : "window.ai (old)");
-    try {
-      let session = cachedAISession;
-      if (!session || cachedPromptVersion !== PROMPT_VERSION) {
-        if (cachedPromptVersion !== PROMPT_VERSION) {
-          console.log("\u{1F437} Prompt updated - recreating AI session with new rules...");
-        } else {
-          console.log("\u{1F437} Creating NEW AI session (first time - this takes 2-3 seconds)...");
-        }
-        const systemPrompt = `You are Piggy Bong \u2014 Your Smart Shopping Prioritizer! \u{1F437}\u2728
-
-Your mission:
-Analyze K-pop shopping carts and rank items by ACTUAL VALUE to their collection \u2014 helping fans make decisions based on what truly moves their collection forward, not just vague feelings.
-
-Personality:
-You're a warm, supportive bestie helping them shop smart! Think: texting your friend about what's actually worth getting.
-Always talk TO the user using "you" and "your" \u2014 NEVER about them using "they" or "the user"
-Sound excited and friendly, not cold or analytical
-Keep it SHORT and SWEET \u2014 2-4 words for reasoning, 5-8 words for insights
-Be positive and supportive, never judgmental or scolding
-
-CRITICAL WRITING RULES:
-\u274C NEVER EVER use third-person: "This user...", "They are...", "The user is..."
-\u274C NEVER use clinical/analytical language: "demonstrates...", "evidenced by...", "indicating...", "likely dedicated to..."
-\u274C NEVER sound like a researcher observing behavior: "The purchase of X suggests...", "actively building...", "shows patterns..."
-\u274C NEVER sound scolding or judgmental: "Take a moment to think", "Quick check", "You should reflect"
-\u274C NEVER be negative about off-bias items: "doesn't align", "not your priority", "doesn't match"
-\u274C BANNED WORDS: "not", "doesn't", "don't", "isn't", "aren't", "won't", "can't", "no"
-\u274C MORE BANNED WORDS: "This user", "They're", "The user", "This person", "proactively", "evidenced", "indicating", "take a moment", "reflect on", "doesn't align", "not aligned"
-\u2705 ALWAYS write in SECOND PERSON ("you're", "your", "you") like talking DIRECTLY TO the user
-\u2705 ALWAYS sound warm, excited, and friendly: "Ooh!", "Love that!", "Your cart is looking fire!"
-\u2705 ALWAYS celebrate their passion FIRST, then gently ask questions
-\u2705 BE POSITIVE about everything: Multi-stanning is normal! Exploring new groups is fun! Never criticize choices.
-\u2705 For off-bias/off-goal items: Just label them (e.g., "Different group"), DON'T say negative things
-\u2705 Focus on WHAT MATTERS TO THEM (their bias, their goals), not what doesn't
-\u2705 Use language like "Your [bias] items are top priority" NOT "This doesn't fit your goal"
-\u2705 Start with enthusiasm: "Ooh", "Love", "Your cart" \u2014 NEVER "Take a moment" or "Quick check"
-
---------------------------------------------
-USER CONTEXT (Dynamic Personalization)
---------------------------------------------
-- Bias: ${PersonalizationHelper.getBias() || "not specified"} (user's favorite group - their #1 priority!)
-- Page Info: cart items, product names, group names, item count
-- Device: On-device Gemini Nano (privacy-first)
-
---------------------------------------------
-YOUR TASK: RANK EACH ITEM BY PRIORITY
---------------------------------------------
-For EACH item in the cart, assign a priority badge (HIGH/MEDIUM/LOW) with specific reasoning.
-
-**PRIORITY SCORING SYSTEM:**
-
-Score each item 0-6 points based on:
-- Matches bias (${PersonalizationHelper.getBias() || "user bias"}): +2 points
-- Completes a collection set: +2 points (look for: "last album needed", "completes era", "final member", etc.)
-- Limited/rare edition: +1 point (look for: "limited", "exclusive", "special edition")
-- Matches collection goal: +1 point
-
-**PRIORITY BADGES:**
-- 3-6 points = HIGH PRIORITY
-- 1-2 points = MEDIUM PRIORITY
-- 0 points = LOW PRIORITY
-
-**FOR EACH ITEM, PROVIDE:**
-1. Item name
-2. Priority badge (HIGH/MEDIUM/LOW)
-3. ULTRA SHORT reasoning (2-4 words ONLY!)
-4. Be warm and friendly - like a supportive bestie!
-
-\u{1F6A8} CRITICAL: Reasoning MUST be 2-4 words MAXIMUM! NO NEGATIVE LANGUAGE! NEVER USE "NOT" OR "DOESN'T"!
-
-\u274C BANNED WORDS: "not", "doesn't", "don't", "isn't", "aren't", "won't", "can't", "no"
-\u274C BANNED PHRASES: "not a match", "no match", "doesn't match", "not directly", "not related"
-
-\u2705 GOOD REASONING EXAMPLES (2-4 words):
-- "Bias + album goal"
-- "Different group"
-- "Off-bias merch"
-- "Limited edition"
-- "Completes your set"
-- "Bias match"
-
-REMEMBER: NEVER say what something is NOT. Only say what it IS! Focus on facts, not negatives!
-
---------------------------------------------
-OUTPUT FORMAT (JSON ONLY)
---------------------------------------------
-\u26A0\uFE0F FINAL CHECK BEFORE RESPONDING:
-- Did you analyze EACH item individually with a priority badge? \u2705
-- Does your output include specific reasoning for each item's score? \u2705
-- Does your "overallInsight" use "You" or "Your" (second person)? \u2705
-- Does it contain "This user" or "They"? \u274C FIX IT!
-
-Return JSON with these EXACT field names:
-
-{
-  "items": [
-    {
-      "name": "Item name from cart",
-      "priority": "HIGH" | "MEDIUM" | "LOW",
-      "reasoning": "2-4 words ONLY! Keep it positive!",
-      "score": 0-6
-    }
-  ],
-  "overallInsight": "5-8 words max! Warm, supportive tone!",
-  "priorityTip": "A helpful question or prompt (5-8 words)"
-}
-
-Example:
-{
-  "items": [
-    {
-      "name": "NewJeans Get Up Album",
-      "priority": "HIGH",
-      "reasoning": "Completes your set",
-      "score": 4
-    },
-    {
-      "name": "NewJeans Haerin photocard",
-      "priority": "MEDIUM",
-      "reasoning": "Bias match",
-      "score": 2
-    },
-    {
-      "name": "Stray Kids holder",
-      "priority": "LOW",
-      "reasoning": "Off-bias",
-      "score": 0
-    }
-  ],
-  "overallInsight": "That album completes your collection",
-  "priorityTip": "Which items feel essential"
-}
-
---------------------------------------------
-RULES - TONE IS EVERYTHING!
---------------------------------------------
-\u2705 DO:
-- ALWAYS use second person ("you", "your") \u2014 talk TO them, not ABOUT them
-- BE ULTRA CONCISE \u2014 2-4 words for reasoning, 5-8 words for insight
-- Keep it warm, friendly, supportive \u2014 like a bestie!
-- Use positive or neutral language only
-- State facts simply, don't explain negatives
-- For LOW priority: say "Off-bias" NOT "doesn't match your preference"
-- Use emojis sparingly (2-3 max)
-
-\u274C DON'T - BANNED PHRASES:
-- Never use third person ("This user", "They", "The user")
-- Never write long explanations \u2014 BE BRIEF!
-- Never use negative/judgmental language:
-  \u274C "doesn't align", "unrelated to", "outside of", "doesn't complete", "doesn't fit"
-  \u274C "limited relevance", "no indication", "doesn't match your goal", "not your priority"
-  \u274C "isn't interested", "not aligned", "doesn't fit your collection"
-  \u274C "won't help", "not relevant", "not useful", "not important"
-  \u274C "this item is", "this is a", "not a direct match"
-- Never use money words (budget, cost, save, price, afford)
-- Never mention store names (Ktown4u, Weverse, Amazon)
-- Never give generic advice ("browse more", "keep exploring")
-- Never sound clinical, analytical, or scolding
-- Never write multiple clauses or complex sentences
-- Never criticize their choices \u2014 just help them prioritize what matters MOST
-
-\u{1F6A8} FINAL WARNING BEFORE YOU RESPOND:
-- Did you check EVERY reasoning for the words "not", "doesn't", "isn't", "no"? \u274C REMOVE THEM!
-- Is EVERY reasoning 2-4 words MAXIMUM? Check the length!
-- Did you use ONLY positive or neutral language? NO NEGATIVES!
-- Example: Instead of "Not a bias match" \u2192 Use "Different group"
-- Example: Instead of "Doesn't complete your goal" \u2192 Use "Off-bias item"
-
-Return ONLY clean JSON. No markdown, no extra text.`;
-        session = hasNewAPI ? await LanguageModel.create({
-          systemPrompt,
-          language: "en",
-          expectedOutputs: [
-            { type: "text", languages: ["en"] }
-          ]
-        }) : await window.ai.languageModel.create({
-          systemPrompt,
-          language: "en"
-        });
-        cachedAISession = session;
-        cachedPromptVersion = PROMPT_VERSION;
-        console.log("\u{1F437} AI session created and cached (version:", PROMPT_VERSION, "):", session);
+  function cleanText(t) {
+    return (t || "").replace(/[\[\(\{].*?[\]\)\}]/g, "").replace(/\s{2,}/g, " ").replace(/\s+([.!?,])/g, "$1").trim();
+  }
+  function validateAIResult(ai) {
+    const safe = { ...ai };
+    safe.items = (ai.items || []).map((it) => ({
+      name: it.name || "Unnamed item",
+      priority: it.priority || "MEDIUM",
+      reasoning: cleanText(it.reasoning || "Collection addition - Building your K-pop treasure"),
+      score: it.score ?? 3
+    }));
+    safe.overallInsight = cleanText(
+      ai.overallInsight || "Building your collection thoughtfully! Each item adds unique value to your K-pop journey"
+    );
+    safe.priorityTip = ai.priorityTip || "Focus on lineup matches first, then explore new groups at your pace";
+    return safe;
+  }
+  function analyzeItemsWithJavaScript(items, lineup, priorityTypes) {
+    console.log("\u{1F50D} Using JavaScript fallback analysis");
+    return items.map((item) => {
+      const itemNameLower = item.name.toLowerCase();
+      const lineupMatch = lineup.find(
+        (group) => itemNameLower.includes(group.toLowerCase())
+      );
+      const typeMatch = priorityTypes.find((type) => {
+        if (type === "lightstick") return itemNameLower.includes("light stick") || itemNameLower.includes("lightstick");
+        if (type === "album") return itemNameLower.includes("album");
+        if (type === "seasongreetings") return itemNameLower.includes("season") || itemNameLower.includes("greeting");
+        if (type === "photocard") return itemNameLower.includes("photocard") || itemNameLower.includes("photo card");
+        if (type === "concert") return itemNameLower.includes("concert") || itemNameLower.includes("show");
+        if (type === "merchandise") return itemNameLower.includes("merchandise") || itemNameLower.includes("merch");
+        return false;
+      });
+      let priority, reasoning, score;
+      if (lineupMatch && typeMatch) {
+        priority = "HIGH";
+        reasoning = "Perfect match - Your lineup + Priority type";
+        score = 5;
+      } else if (lineupMatch) {
+        priority = "MEDIUM";
+        reasoning = "Core lineup - Expanding your collection";
+        score = 3;
+      } else if (typeMatch) {
+        priority = "MEDIUM";
+        reasoning = "Priority type - Exploring new groups";
+        score = 3;
       } else {
-        console.log("\u{1F437} Using CACHED AI session (much faster!)");
+        priority = "MEDIUM";
+        reasoning = "Multi-stan opportunity - Broadening horizons";
+        score = 3;
       }
-      if (!productInfo) {
-        console.error("\u{1F437} \u274C productInfo is null in analyzeWithAI");
-        throw new Error("No product information available");
-      }
-      let prompt = "";
-      const personalizationContext = PersonalizationHelper.getPersonalizationContext();
-      if (productInfo.isCart && productInfo.items) {
-        const itemsList = productInfo.items.map(
-          (item, i) => `Item ${i + 1}: ${item.name} (Qty: ${item.quantity}, Price: ${item.price})`
-        ).join("\n");
-        prompt = `${personalizationContext}
-CART ANALYSIS:
-${itemsList}
-Total: ${productInfo.total}
-Total Items: ${productInfo.itemCount}
-Page: ${pageUrl}
-
-Analyze this cart and rank EACH item with HIGH/MEDIUM/LOW priority badges!
-
-Use the priority scoring system:
-- Bias match: +2 points
-- Completes collection set: +2 points
-- Limited/rare edition: +1 point
-- Matches collection goal: +1 point
-Score 3-6 = HIGH, 1-2 = MEDIUM, 0 = LOW
-
-IMPORTANT: Return ONLY the JSON object with these EXACT fields:
-- items (array of objects, one for EACH cart item):
-  - name (string: item name)
-  - priority (string: "HIGH" or "MEDIUM" or "LOW")
-  - reasoning (string: why this priority - be specific!)
-  - score (number: 0-6 based on scoring system)
-- overallInsight (string: 2-3 sentences overall cart summary. Use second person!)
-- priorityTip (string: A helpful question or prompt, under 20 words)
-
-Return ONLY clean JSON. No markdown, no extra text.`;
-      } else {
-        prompt = `${personalizationContext}
-PRODUCT ANALYSIS:
-Product: ${productInfo.name}
-Price: ${productInfo.price}
-Page: ${pageUrl}
-
-Analyze this purchase and rank it with a HIGH/MEDIUM/LOW priority badge!
-
-Use the priority scoring system:
-- Bias match: +2 points
-- Completes collection set: +2 points
-- Limited/rare edition: +1 point
-- Matches collection goal: +1 point
-Score 3-6 = HIGH, 1-2 = MEDIUM, 0 = LOW
-
-IMPORTANT: Return ONLY the JSON object with these EXACT fields:
-- items (array with one object):
-  - name (string: product name)
-  - priority (string: "HIGH" or "MEDIUM" or "LOW")
-  - reasoning (string: why this priority - be specific!)
-  - score (number: 0-6 based on scoring system)
-- overallInsight (string: 2-3 sentences about this product. Use second person!)
-- priorityTip (string: A helpful question or prompt, under 20 words)
-
-Return ONLY clean JSON. No markdown, no extra text.`;
-      }
-      console.log("\u{1F437} Sending prompt to AI:", prompt);
-      const result = await session.prompt(prompt);
-      console.log("\u{1F437} AI raw response:", result);
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        console.log("\u{1F437} Parsed JSON:", parsed);
-        if (parsed.items && Array.isArray(parsed.items) && parsed.overallInsight && parsed.priorityTip) {
-          console.log("\u{1F437} \u2705 AI priority analysis successful!");
-          return {
-            items: parsed.items,
-            overallInsight: parsed.overallInsight,
-            priorityTip: parsed.priorityTip,
-            emojiSet: parsed.emojiSet || ""
-          };
-        } else {
-          console.warn("\u{1F437} \u26A0\uFE0F AI returned JSON but missing required fields:", {
-            hasItems: !!parsed.items,
-            isItemsArray: Array.isArray(parsed.items),
-            hasOverallInsight: !!parsed.overallInsight,
-            hasPriorityTip: !!parsed.priorityTip
-          });
-        }
-      }
-      console.warn("\u{1F437} \u26A0\uFE0F Using fallback response");
       return {
-        items: [{
-          name: "Your items",
-          priority: "MEDIUM",
-          badge: "\u2705",
-          reasoning: "Looking good! Check which items match your collection goals.",
-          score: 2
-        }],
-        overallInsight: "Ooh, your cart is looking good! \u{1F6CD}\uFE0F Love the K-pop energy in here! \u2728",
-        priorityTip: "Which items are you most excited about? Those are your priorities!",
-        emojiSet: "\u{1F6CD}\uFE0F\u{1F49C}\u2728"
+        name: item.name,
+        priority,
+        reasoning,
+        score
       };
+    });
+  }
+  async function analyzeWithAI(pageText, pageUrl, productInfo) {
+    console.log("\u{1F437} analyzeWithAI() START - Using Gemini Nano Prompt API");
+    const lineup = PersonalizationHelper.getLineup();
+    const priority = PersonalizationHelper.getPriority();
+    const legacyBias = PersonalizationHelper.getBias();
+    const userGroups = lineup.length > 0 ? lineup : legacyBias ? [legacyBias] : ["NewJeans"];
+    const priorityTypes = priority && priority.types ? priority.types : [];
+    console.log("\u{1F50D} User preferences:", { lineup: userGroups, priorityTypes });
+    try {
+      console.log("\u{1F437} Sending AI request to background service worker...");
+      const response = await chrome.runtime.sendMessage({
+        action: "analyzeWithAI",
+        data: {
+          items: productInfo.items,
+          userGroups,
+          priorityTypes
+        }
+      });
+      if (response.success) {
+        console.log("\u{1F437} \u2705 AI analysis from background received");
+        return validateAIResult(response.result);
+      } else {
+        console.warn("\u{1F437} \u26A0\uFE0F Background AI failed:", response.error);
+        console.warn("\u{1F437} Using JavaScript fallback");
+        return useJavaScriptFallback(productInfo, userGroups, priorityTypes);
+      }
     } catch (error) {
-      console.error("AI error:", error);
-      throw error;
+      console.error("\u{1F437} \u274C Failed to communicate with background:", error);
+      console.warn("\u{1F437} Using JavaScript fallback");
+      return useJavaScriptFallback(productInfo, userGroups, priorityTypes);
     }
+  }
+  function useJavaScriptFallback(productInfo, userGroups, priorityTypes) {
+    const analyzedItems = analyzeItemsWithJavaScript(
+      productInfo.items,
+      userGroups,
+      priorityTypes
+    );
+    const lineupText = userGroups.join(", ");
+    const typesText = priorityTypes.length > 0 ? ` and ${priorityTypes.join(", ")} items` : "";
+    return validateAIResult({
+      items: analyzedItems,
+      overallInsight: `Your cart has ${analyzedItems.length} items! Focus on ${lineupText}${typesText} to build your collection.`,
+      priorityTip: `Start with ${lineupText} items${priorityTypes.length > 0 ? ` and ${priorityTypes.join(", ")} types` : ""} first.`
+    });
   }
 
   // src/content/ui/modal.js
@@ -857,8 +694,7 @@ Return ONLY clean JSON. No markdown, no extra text.`;
     modal.setAttribute("aria-modal", "true");
     modal.setAttribute("aria-labelledby", "piggybong-onboarding-title");
     const logoUrl = chrome.runtime.getURL("piggybong.png");
-    const existingBias = PersonalizationHelper.getBias() || "";
-    const isEditing = existingBias;
+    const isEditing = PersonalizationHelper.hasPersonalization();
     modal.innerHTML = `
     <div class="piggybong-modal-overlay" aria-hidden="true"></div>
     <div class="piggybong-modal-content" style="max-width: 450px;">
@@ -872,20 +708,75 @@ Return ONLY clean JSON. No markdown, no extra text.`;
 
       <div class="piggybong-modal-body">
         <div class="piggybong-onboarding-content">
-          <p style="margin-bottom: 20px; color: #666; font-size: 14px; line-height: 1.6;">
-            Want me to help prioritize what matches <strong>your bias</strong> in your cart? \u{1F49C}
+          <p style="margin-bottom: 16px; color: #666; font-size: 14px; line-height: 1.5;">
+            ${isEditing ? "Update your K-pop collection preferences." : "Piggy Bong helps you prioritize K-pop items in your cart."}
           </p>
 
-          <div class="piggybong-form-group">
-            <label for="piggy-bias-input" style="display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #4a4a4a;">Who's your #1 priority? (optional)</label>
-            <input
-              type="text"
-              id="piggy-bias-input"
-              placeholder="e.g., BLACKPINK, NewJeans, Stray Kids..."
-              value="${existingBias}"
-              style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;"
-            />
-            <p style="font-size: 12px; color: #999; margin-top: 6px;">I'll mention them by name in your priority tips!</p>
+          <!-- Your Lineup -->
+          <div class="piggybong-form-group" style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 600; color: #333;">Your Lineup</label>
+            <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Type to search and add groups (optional)</p>
+
+            <div style="position: relative;">
+              <input
+                type="text"
+                id="lineup-search-input"
+                placeholder="Search for groups (e.g., NewJeans, Stray Kids)..."
+                autocomplete="off"
+                style="width: 100%; padding: 12px 12px 12px 40px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;"
+              />
+              <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#999">
+                <circle cx="11" cy="11" r="8" stroke-width="2"/>
+                <path d="m21 21-4.35-4.35" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <div id="lineup-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+            </div>
+
+            <div id="selected-lineup" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
+          </div>
+
+          <!-- Your Fan Priority -->
+          <div class="piggybong-form-group" style="margin-bottom: 16px; margin-top: 8px;">
+            <label style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 600; color: #333;">Your Fan Priority</label>
+            <p style="font-size: 13px; color: #666; margin-bottom: 8px;">What item types matter most? (select all that apply)</p>
+
+            <div style="position: relative;">
+              <div
+                id="priority-dropdown-trigger"
+                style="width: 100%; padding: 12px 40px 12px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background-color: white; cursor: pointer; min-height: 20px; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27%3e%3cpath fill=%27%23333%27 d=%27M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z%27/%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 12px center; color: #999;"
+              >
+                Select item types...
+              </div>
+
+              <div id="priority-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+                  <input type="checkbox" value="lightstick" class="priority-checkbox" data-label="Official Light Stick" style="margin-right: 8px; width: 16px; height: 16px; cursor: pointer; accent-color: #5D2CEE;">
+                  <span style="font-size: 13px;">Official Light Stick</span>
+                </label>
+                <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+                  <input type="checkbox" value="album" class="priority-checkbox" data-label="Latest Album" style="margin-right: 8px; width: 16px; height: 16px; cursor: pointer; accent-color: #5D2CEE;">
+                  <span style="font-size: 13px;">Latest Album</span>
+                </label>
+                <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+                  <input type="checkbox" value="seasongreetings" class="priority-checkbox" data-label="Season's Greetings" style="margin-right: 8px; width: 16px; height: 16px; cursor: pointer; accent-color: #5D2CEE;">
+                  <span style="font-size: 13px;">Season's Greetings</span>
+                </label>
+                <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+                  <input type="checkbox" value="photocard" class="priority-checkbox" data-label="Photocard Set" style="margin-right: 8px; width: 16px; height: 16px; cursor: pointer; accent-color: #5D2CEE;">
+                  <span style="font-size: 13px;">Photocard Set</span>
+                </label>
+                <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+                  <input type="checkbox" value="concert" class="priority-checkbox" data-label="Concert/Show" style="margin-right: 8px; width: 16px; height: 16px; cursor: pointer; accent-color: #5D2CEE;">
+                  <span style="font-size: 13px;">Concert/Show</span>
+                </label>
+                <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer;">
+                  <input type="checkbox" value="merchandise" class="priority-checkbox" data-label="Official Merchandise" style="margin-right: 8px; width: 16px; height: 16px; cursor: pointer; accent-color: #5D2CEE;">
+                  <span style="font-size: 13px;">Official Merchandise</span>
+                </label>
+              </div>
+            </div>
+
+            <div id="selected-priority" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
           </div>
 
           <button
@@ -893,26 +784,199 @@ Return ONLY clean JSON. No markdown, no extra text.`;
             class="piggybong-primary-btn"
             style="width: 100%; margin-top: 20px; padding: 12px 24px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); border: none; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; font-size: 14px;"
           >
-            Save My Fan Priority
+            ${isEditing ? "Save Changes" : "Save & Continue"}
           </button>
 
+          ${!isEditing ? `
           <button
             id="piggy-skip-onboarding"
             style="width: 100%; margin-top: 10px; padding: 10px 24px; background: transparent; border: none; color: #5D2CEE; cursor: pointer; font-size: 14px; font-weight: 600; border-radius: 50px;"
           >
-            Skip for now
+            Skip for Now
           </button>
+          ` : ""}
         </div>
       </div>
     </div>
   `;
     document.body.appendChild(modal);
+    const KPOP_GROUPS = [
+      "NewJeans",
+      "Stray Kids",
+      "LE SSERAFIM",
+      "IVE",
+      "MIYEON",
+      "SHINee",
+      "BLACKPINK",
+      "BTS",
+      "TWICE",
+      "aespa",
+      "Red Velvet",
+      "ITZY",
+      "SEVENTEEN",
+      "NCT",
+      "EXO",
+      "TXT",
+      "ENHYPEN",
+      "ATEEZ",
+      "THE BOYZ",
+      "Kep1er",
+      "NMIXX",
+      "TREASURE",
+      "MONSTA X"
+    ];
+    const lineupSearchInput = modal.querySelector("#lineup-search-input");
+    const lineupSuggestions = modal.querySelector("#lineup-suggestions");
+    const selectedLineupContainer = modal.querySelector("#selected-lineup");
+    const selectedGroups = /* @__PURE__ */ new Set();
+    const existingLineup = PersonalizationHelper.getLineup();
+    existingLineup.forEach((group) => {
+      selectedGroups.add(group);
+      addLineupTag(group);
+    });
+    function addLineupTag(groupName) {
+      const tag = document.createElement("div");
+      tag.className = "lineup-tag";
+      tag.style.cssText = "display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #5D2CEE; color: white; border-radius: 20px; font-size: 13px; font-weight: 500;";
+      tag.innerHTML = `
+      <span>${groupName}</span>
+      <button style="background: none; border: none; color: white; cursor: pointer; font-size: 16px; line-height: 1; padding: 0; margin: 0;" data-group="${groupName}">\xD7</button>
+    `;
+      selectedLineupContainer.appendChild(tag);
+      tag.querySelector("button").addEventListener("click", (e) => {
+        const group = e.target.dataset.group;
+        selectedGroups.delete(group);
+        tag.remove();
+      });
+    }
+    lineupSearchInput.addEventListener("input", (e) => {
+      const query = e.target.value.trim().toLowerCase();
+      if (!query) {
+        lineupSuggestions.style.display = "none";
+        return;
+      }
+      const matches = KPOP_GROUPS.filter(
+        (group) => group.toLowerCase().includes(query) && !selectedGroups.has(group)
+      );
+      if (matches.length === 0) {
+        lineupSuggestions.innerHTML = `<div style="padding: 12px; color: #666; font-size: 13px;">No matches. Press Enter to add "${e.target.value}"</div>`;
+        lineupSuggestions.style.display = "block";
+      } else {
+        lineupSuggestions.innerHTML = matches.map(
+          (group) => `<div class="suggestion-item" data-group="${group}" style="padding: 10px 12px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #f0f0f0;">${group}</div>`
+        ).join("");
+        lineupSuggestions.style.display = "block";
+        lineupSuggestions.querySelectorAll(".suggestion-item").forEach((item) => {
+          item.addEventListener("mouseenter", () => {
+            item.style.background = "#f5f5f5";
+          });
+          item.addEventListener("mouseleave", () => {
+            item.style.background = "white";
+          });
+          item.addEventListener("click", () => {
+            const group = item.dataset.group;
+            selectedGroups.add(group);
+            addLineupTag(group);
+            lineupSearchInput.value = "";
+            lineupSuggestions.style.display = "none";
+          });
+        });
+      }
+    });
+    lineupSearchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && e.target.value.trim()) {
+        const group = e.target.value.trim();
+        if (!selectedGroups.has(group)) {
+          selectedGroups.add(group);
+          addLineupTag(group);
+        }
+        e.target.value = "";
+        lineupSuggestions.style.display = "none";
+      }
+    });
+    const priorityTrigger = modal.querySelector("#priority-dropdown-trigger");
+    const priorityMenu = modal.querySelector("#priority-dropdown-menu");
+    const priorityCheckboxes = modal.querySelectorAll(".priority-checkbox");
+    const selectedPriorityContainer = modal.querySelector("#selected-priority");
+    const selectedPriorityTypes = /* @__PURE__ */ new Set();
+    priorityTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      priorityMenu.style.display = priorityMenu.style.display === "none" ? "block" : "none";
+    });
+    document.addEventListener("click", (e) => {
+      if (!priorityTrigger.contains(e.target) && !priorityMenu.contains(e.target)) {
+        priorityMenu.style.display = "none";
+      }
+    });
+    function addPriorityTag(value, label) {
+      const tag = document.createElement("div");
+      tag.className = "priority-tag";
+      tag.style.cssText = "display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #5D2CEE; color: white; border-radius: 20px; font-size: 13px; font-weight: 500;";
+      tag.innerHTML = `
+      <span>${label}</span>
+      <button style="background: none; border: none; color: white; cursor: pointer; font-size: 16px; line-height: 1; padding: 0; margin: 0;" data-value="${value}">\xD7</button>
+    `;
+      selectedPriorityContainer.appendChild(tag);
+      tag.querySelector("button").addEventListener("click", (e) => {
+        const typeValue = e.target.dataset.value;
+        selectedPriorityTypes.delete(typeValue);
+        const checkbox = modal.querySelector(`.priority-checkbox[value="${typeValue}"]`);
+        if (checkbox) checkbox.checked = false;
+        tag.remove();
+      });
+    }
+    priorityCheckboxes.forEach((checkbox) => {
+      checkbox.addEventListener("change", (e) => {
+        const value = e.target.value;
+        const label = e.target.dataset.label;
+        if (e.target.checked) {
+          if (!selectedPriorityTypes.has(value)) {
+            selectedPriorityTypes.add(value);
+            addPriorityTag(value, label);
+          }
+        } else {
+          selectedPriorityTypes.delete(value);
+          const existingTag = selectedPriorityContainer.querySelector(`button[data-value="${value}"]`);
+          if (existingTag) existingTag.parentElement.remove();
+        }
+      });
+    });
+    const existingPriority = PersonalizationHelper.getPriority();
+    if (existingPriority) {
+      const types = Array.isArray(existingPriority.types) ? existingPriority.types : [existingPriority.type];
+      priorityCheckboxes.forEach((checkbox) => {
+        if (types.includes(checkbox.value)) {
+          checkbox.checked = true;
+          selectedPriorityTypes.add(checkbox.value);
+          addPriorityTag(checkbox.value, checkbox.dataset.label);
+        }
+      });
+    }
     const saveBtn = modal.querySelector("#piggy-save-preferences");
+    console.log("\u{1F50D} Save button found:", saveBtn);
     saveBtn.addEventListener("click", () => {
-      const bias = modal.querySelector("#piggy-bias-input").value.trim();
-      if (bias) {
-        PersonalizationHelper.setBias(bias);
-        console.log("\u{1F437} Bias set to:", bias);
+      console.log("\u{1F50D} ========== SAVE BUTTON CLICKED ==========");
+      const lineup = Array.from(selectedGroups);
+      console.log("\u{1F50D} Total priority checkboxes found:", priorityCheckboxes.length);
+      priorityCheckboxes.forEach((cb, i) => {
+        console.log(`  Checkbox ${i}: value="${cb.value}" checked=${cb.checked}`);
+      });
+      const checkedPriorities = Array.from(priorityCheckboxes).filter((cb) => cb.checked);
+      const priorityTypes = checkedPriorities.map((cb) => cb.value);
+      console.log("\u{1F50D} Checked priorities:", checkedPriorities.length, priorityTypes);
+      PersonalizationHelper.setLineup(lineup);
+      console.log("\u{1F437} Lineup set to:", lineup.length > 0 ? lineup : "(empty - just browsing)");
+      if (priorityTypes.length > 0) {
+        PersonalizationHelper.setPriority({
+          types: priorityTypes,
+          // Array of selected types
+          name: priorityTypes.join(", ")
+          // Human-readable name
+        });
+        console.log("\u{1F437} Priority set to:", priorityTypes);
+      } else {
+        localStorage.removeItem("piggyPriority");
+        console.log("\u{1F437} Priority cleared (no types selected)");
       }
       modal.remove();
       if (callback) callback();
@@ -927,7 +991,9 @@ Return ONLY clean JSON. No markdown, no extra text.`;
         callback();
       }
     };
-    skipBtn.addEventListener("click", skipOnboarding);
+    if (skipBtn) {
+      skipBtn.addEventListener("click", skipOnboarding);
+    }
     closeBtn.addEventListener("click", skipOnboarding);
     overlay.addEventListener("click", skipOnboarding);
     const handleEscapeKey = (e) => {
@@ -996,6 +1062,9 @@ Return ONLY clean JSON. No markdown, no extra text.`;
     </div>
   `;
     document.body.appendChild(modal);
+    console.log("\u{1F50D} Modal appended to body. Modal element:", modal);
+    console.log("\u{1F50D} Modal classList:", modal.classList);
+    console.log("\u{1F50D} Modal display style:", window.getComputedStyle(modal).display);
     const settingsBtn = modal.querySelector(".piggybong-settings-btn");
     settingsBtn.addEventListener("click", () => {
       modal.remove();
@@ -1025,7 +1094,11 @@ Return ONLY clean JSON. No markdown, no extra text.`;
       document.removeEventListener("keydown", handleEscapeKey);
       originalRemove();
     };
-    setTimeout(() => modal.classList.add("show"), 10);
+    setTimeout(() => {
+      modal.classList.add("show");
+      console.log("\u{1F50D} Added .show class to modal. classList now:", modal.classList);
+      console.log("\u{1F50D} Modal should now be visible with transform: translateX(0)");
+    }, 10);
     runAIAnalysis(pageText, pageUrl, productInfo);
   }
   async function runAIAnalysis(pageText, pageUrl, productInfo) {
@@ -1039,10 +1112,17 @@ Return ONLY clean JSON. No markdown, no extra text.`;
     }
     try {
       console.log("\u{1F437} Calling analyzeWithAI...");
+      const startTime = Date.now();
       const aiResult = await analyzeWithAI(pageText, pageUrl, productInfo);
       console.log("\u{1F437} AI Result:", aiResult);
+      const elapsedTime = Date.now() - startTime;
+      const minDisplayTime = 800;
+      const remainingTime = Math.max(0, minDisplayTime - elapsedTime);
+      await new Promise((resolve) => setTimeout(resolve, remainingTime));
       const loadingDiv = modalBody.querySelector(".piggybong-loading");
+      console.log("\u{1F50D} Loading div found:", loadingDiv);
       if (loadingDiv) {
+        console.log("\u{1F50D} Removing loading div...");
         loadingDiv.remove();
       }
       let contextSummary = "";
@@ -1081,7 +1161,11 @@ Return ONLY clean JSON. No markdown, no extra text.`;
         </div>
       </div>
     `;
+      console.log("\u{1F50D} Inserting analysis HTML into modalBody...");
+      console.log("\u{1F50D} modalBody:", modalBody);
+      console.log("\u{1F50D} analysisHTML length:", analysisHTML.length);
       modalBody.insertAdjacentHTML("beforeend", analysisHTML);
+      console.log("\u{1F50D} Analysis HTML inserted successfully!");
     } catch (error) {
       console.error("\u{1F437} \u274C AI analysis failed:", error);
       console.error("\u{1F437} Error details:", error.message);
