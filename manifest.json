@@ -1,8 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Piggy Bong",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Your K-pop shopping companion. Rank cart items by priority and make intentional collection decisions.",
+  "trial_tokens": [
+    "Ay08PzuguynKCwsX2jwIZHsmwrsXLqqO1NGCj0qPRaN6XdknzosZhWsegi7aIYxShJTAVV2cbS4rfcfZHcEuSgkAAACPeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vb29qYWprcHBpZGlla29qamtnb3BhbGVtbmFuY2xkZ2IiLCJmZWF0dXJlIjoiQUlQcm9tcHRBUElNdWx0aW1vZGFsSW5wdXQiLCJleHBpcnkiOjE3NzQzMTA0MDAsImlzVGhpcmRQYXJ0eSI6dHJ1ZX0="
+  ],
   "action": {
     "default_icon": "piggybong.png"
   },

@@ -353,6 +353,187 @@
       return context;
     }
   };
+  var CartHistoryHelper = {
+    // Extract artist/group name from item name
+    extractArtist(itemName) {
+      const lineup = PersonalizationHelper.getLineup();
+      for (const group of lineup) {
+        if (itemName.toLowerCase().includes(group.toLowerCase())) {
+          return group;
+        }
+      }
+      const commonGroups = [
+        "NewJeans",
+        "BTS",
+        "BLACKPINK",
+        "TWICE",
+        "Stray Kids",
+        "aespa",
+        "SEVENTEEN",
+        "TXT",
+        "ENHYPEN",
+        "IVE",
+        "LE SSERAFIM",
+        "ITZY",
+        "Red Velvet",
+        "NCT",
+        "EXO",
+        "BIGBANG",
+        "GOT7",
+        "ATEEZ"
+      ];
+      for (const group of commonGroups) {
+        if (itemName.toLowerCase().includes(group.toLowerCase())) {
+          return group;
+        }
+      }
+      return "Unknown";
+    },
+    // Extract item type from item name
+    extractType(itemName) {
+      const lowerName = itemName.toLowerCase();
+      if (lowerName.includes("photocard") || lowerName.includes("pc")) return "photocard";
+      if (lowerName.includes("album")) return "album";
+      if (lowerName.includes("lightstick") || lowerName.includes("light stick")) return "lightstick";
+      if (lowerName.includes("poster")) return "poster";
+      if (lowerName.includes("season") && lowerName.includes("greeting")) return "season's greetings";
+      if (lowerName.includes("dvd") || lowerName.includes("blu-ray")) return "dvd/blu-ray";
+      if (lowerName.includes("merchandise") || lowerName.includes("merch")) return "merchandise";
+      return "other";
+    },
+    // Get all cart history
+    getCartHistory() {
+      const stored = localStorage.getItem("piggyCartHistory");
+      return stored ? JSON.parse(stored) : [];
+    },
+    // Save a cart snapshot
+    saveCartSnapshot(items, total, timestamp = Date.now()) {
+      const history = this.getCartHistory();
+      const snapshot = {
+        id: timestamp,
+        date: new Date(timestamp).toISOString(),
+        items: items.map((item) => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity || 1,
+          artist: this.extractArtist(item.name),
+          type: this.extractType(item.name)
+        })),
+        total,
+        purchased: false,
+        // We assume not purchased initially
+        lineup: PersonalizationHelper.getLineup(),
+        priorityTypes: PersonalizationHelper.getPriority()?.types || []
+      };
+      const recentSnapshot = history[history.length - 1];
+      if (recentSnapshot && timestamp - recentSnapshot.id < 3e5) {
+        const sameItems = JSON.stringify(recentSnapshot.items) === JSON.stringify(snapshot.items);
+        if (sameItems) {
+          console.log("\u{1F4CA} Skipping duplicate cart snapshot");
+          return;
+        }
+      }
+      history.push(snapshot);
+      if (history.length > 50) {
+        history.shift();
+      }
+      localStorage.setItem("piggyCartHistory", JSON.stringify(history));
+      console.log("\u{1F4CA} Saved cart snapshot:", snapshot);
+    },
+    // Get artist frequency across all carts
+    getArtistFrequency(history) {
+      const frequency = {};
+      history.forEach((cart) => {
+        cart.items.forEach((item) => {
+          const artist = item.artist;
+          if (artist !== "Unknown") {
+            frequency[artist] = (frequency[artist] || 0) + 1;
+          }
+        });
+      });
+      return frequency;
+    },
+    // Get item type frequency
+    getTypeFrequency(history) {
+      const frequency = {};
+      history.forEach((cart) => {
+        cart.items.forEach((item) => {
+          const type = item.type;
+          frequency[type] = (frequency[type] || 0) + 1;
+        });
+      });
+      return frequency;
+    },
+    // Detect seasonal patterns (which months user shops most)
+    getSeasonalPatterns(history) {
+      const monthCounts = {};
+      history.forEach((cart) => {
+        const date = new Date(cart.date);
+        const monthName = date.toLocaleString("en-US", { month: "long" });
+        monthCounts[monthName] = (monthCounts[monthName] || 0) + 1;
+      });
+      return monthCounts;
+    },
+    // Get abandoned items (added 2+ times but never purchased)
+    getAbandonedItems(history) {
+      const itemCounts = {};
+      history.forEach((cart) => {
+        cart.items.forEach((item) => {
+          const key = item.name;
+          if (!itemCounts[key]) {
+            itemCounts[key] = { count: 0, purchased: false, artist: item.artist, type: item.type };
+          }
+          itemCounts[key].count++;
+          if (cart.purchased) {
+            itemCounts[key].purchased = true;
+          }
+        });
+      });
+      return Object.entries(itemCounts).filter(([name, data]) => data.count >= 2 && !data.purchased).map(([name, data]) => ({
+        name,
+        timesAdded: data.count,
+        artist: data.artist,
+        type: data.type
+      }));
+    },
+    // Calculate average cart value
+    getAverageCartValue(history) {
+      if (history.length === 0) return 0;
+      const total = history.reduce((sum, cart) => sum + (cart.total || 0), 0);
+      return total / history.length;
+    },
+    // Detect lineup mismatches (stated vs actual collecting behavior)
+    getLineupMismatch(history) {
+      const currentLineup = PersonalizationHelper.getLineup();
+      if (currentLineup.length === 0) return null;
+      const artistFreq = this.getArtistFrequency(history);
+      const topArtists = Object.entries(artistFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([artist]) => artist);
+      const notInLineup = topArtists.filter(
+        (artist) => !currentLineup.some(
+          (lineupGroup) => lineupGroup.toLowerCase() === artist.toLowerCase()
+        )
+      );
+      return notInLineup.length > 0 ? notInLineup : null;
+    },
+    // Analyze all patterns
+    analyzePatterns() {
+      const history = this.getCartHistory();
+      if (history.length < 2) {
+        return null;
+      }
+      return {
+        totalCarts: history.length,
+        artistFrequency: this.getArtistFrequency(history),
+        typeFrequency: this.getTypeFrequency(history),
+        seasonalPatterns: this.getSeasonalPatterns(history),
+        abandonedItems: this.getAbandonedItems(history),
+        averageCartValue: this.getAverageCartValue(history),
+        lineupMismatch: this.getLineupMismatch(history),
+        oldestCart: new Date(history[0].date).toLocaleDateString(),
+        newestCart: new Date(history[history.length - 1].date).toLocaleDateString()
+      };
+    }
+  };
 
   // src/content/extractors/ktown4u.js
   function extractKtown4uCart() {
@@ -594,6 +775,8 @@
       ai.overallInsight || "Building your collection thoughtfully! Each item adds unique value to your K-pop journey"
     );
     safe.priorityTip = ai.priorityTip || "Focus on lineup matches first, then explore new groups at your pace";
+    safe.patternInsight = ai.patternInsight ? cleanText(ai.patternInsight) : null;
+    safe.futureOpportunity = ai.futureOpportunity ? cleanText(ai.futureOpportunity) : null;
     return safe;
   }
   function analyzeItemsWithJavaScript(items, lineup, priorityTypes) {
@@ -614,21 +797,21 @@
       });
       let priority, reasoning, score;
       if (lineupMatch && typeMatch) {
-        priority = "HIGH";
+        priority = "Top Priority";
         reasoning = "Perfect match - Your lineup + Priority type";
         score = 5;
       } else if (lineupMatch) {
-        priority = "MEDIUM";
-        reasoning = "Core lineup - Expanding your collection";
+        priority = "Core Lineup";
+        reasoning = "Your favorite group - Expanding collection";
         score = 3;
       } else if (typeMatch) {
-        priority = "MEDIUM";
-        reasoning = "Priority type - Exploring new groups";
-        score = 3;
+        priority = "Discovery";
+        reasoning = "Discovering new groups through your preferred items";
+        score = 2;
       } else {
-        priority = "MEDIUM";
-        reasoning = "Multi-stan opportunity - Broadening horizons";
-        score = 3;
+        priority = "Multi-Stan";
+        reasoning = "Broadening horizons beyond your core collection";
+        score = 1;
       }
       return {
         name: item.name,
@@ -646,31 +829,57 @@
     const userGroups = lineup.length > 0 ? lineup : legacyBias ? [legacyBias] : ["NewJeans"];
     const priorityTypes = priority && priority.types ? priority.types : [];
     console.log("\u{1F50D} User preferences:", { lineup: userGroups, priorityTypes });
+    if (productInfo.items && productInfo.items.length > 0) {
+      CartHistoryHelper.saveCartSnapshot(productInfo.items, productInfo.total);
+      console.log("\u{1F4CA} Cart snapshot saved to history");
+    }
+    const patterns = CartHistoryHelper.analyzePatterns();
+    if (patterns) {
+      console.log("\u{1F4CA} Cart patterns detected:", {
+        totalCarts: patterns.totalCarts,
+        topArtists: Object.keys(patterns.artistFrequency).slice(0, 3),
+        abandonedItems: patterns.abandonedItems.length
+      });
+    }
+    console.log("\u{1F437} Using hybrid approach: JS for badges, AI for insights");
+    const classifiedItems = analyzeItemsWithJavaScript(productInfo.items, userGroups, priorityTypes);
+    console.log("\u2705 JavaScript badge classification:", classifiedItems.map((i) => `${i.name.substring(0, 30)}... \u2192 ${i.priority}`));
     try {
-      console.log("\u{1F437} Sending AI request to background service worker...");
+      console.log("\u{1F437} Requesting AI insights (overallInsight, futureOpportunity)...");
       const response = await chrome.runtime.sendMessage({
         action: "analyzeWithAI",
         data: {
           items: productInfo.items,
+          classifiedItems,
+          // 📊 Send pre-classified items so AI knows the correct badges
           userGroups,
-          priorityTypes
+          priorityTypes,
+          patterns
+          // 📊 Include pattern analysis
         }
       });
-      if (response.success) {
-        console.log("\u{1F437} \u2705 AI analysis from background received");
-        return validateAIResult(response.result);
+      if (response.success && response.result) {
+        console.log("\u{1F437} \u2705 AI insights received from background");
+        return validateAIResult({
+          items: classifiedItems,
+          // ✅ Use JavaScript-classified badges (100% accurate)
+          overallInsight: response.result.overallInsight,
+          futureOpportunity: response.result.futureOpportunity,
+          priorityTip: response.result.priorityTip || "Focus on lineup matches first, then explore new groups at your pace",
+          patternInsight: response.result.patternInsight || null
+        });
       } else {
         console.warn("\u{1F437} \u26A0\uFE0F Background AI failed:", response.error);
-        console.warn("\u{1F437} Using JavaScript fallback");
-        return useJavaScriptFallback(productInfo, userGroups, priorityTypes);
+        console.warn("\u{1F437} Using JavaScript-only fallback");
+        return useJavaScriptFallback(productInfo, userGroups, priorityTypes, patterns);
       }
     } catch (error) {
       console.error("\u{1F437} \u274C Failed to communicate with background:", error);
-      console.warn("\u{1F437} Using JavaScript fallback");
-      return useJavaScriptFallback(productInfo, userGroups, priorityTypes);
+      console.warn("\u{1F437} Using JavaScript-only fallback");
+      return useJavaScriptFallback(productInfo, userGroups, priorityTypes, patterns);
     }
   }
-  function useJavaScriptFallback(productInfo, userGroups, priorityTypes) {
+  function useJavaScriptFallback(productInfo, userGroups, priorityTypes, patterns) {
     const analyzedItems = analyzeItemsWithJavaScript(
       productInfo.items,
       userGroups,
@@ -678,10 +887,33 @@
     );
     const lineupText = userGroups.join(", ");
     const typesText = priorityTypes.length > 0 ? ` and ${priorityTypes.join(", ")} items` : "";
+    let patternInsight = null;
+    let futureOpportunity = null;
+    if (patterns) {
+      const currentItemNames = productInfo.items.map((item) => item.name.toLowerCase());
+      const abandonedInCart = patterns.abandonedItems.filter(
+        (abandoned) => currentItemNames.some((current) => current.includes(abandoned.name.toLowerCase()))
+      );
+      if (abandonedInCart.length > 0) {
+        patternInsight = `\u{1F4AD} You've added "${abandonedInCart[0].name}" ${abandonedInCart[0].timesAdded} times before but never purchased. Trust your instincts!`;
+      }
+      if (patterns.lineupMismatch && patterns.lineupMismatch.length > 0) {
+        const topMismatch = patterns.lineupMismatch[0];
+        const freq = patterns.artistFrequency[topMismatch];
+        patternInsight = patternInsight || `\u{1F4CA} Your cart history shows ${freq}x ${topMismatch} items, but they're not in your lineup. Consider adding them!`;
+      }
+      const currentMonth = (/* @__PURE__ */ new Date()).toLocaleString("en-US", { month: "long" });
+      const peakMonths = Object.entries(patterns.seasonalPatterns).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([month]) => month);
+      if (peakMonths.length > 0 && !peakMonths.includes(currentMonth)) {
+        futureOpportunity = `\u{1F3AF} Your collecting pattern peaks in ${peakMonths.join(" and ")}. Save your budget for then when ${lineupText} typically release new content!`;
+      }
+    }
     return validateAIResult({
       items: analyzedItems,
       overallInsight: `Your cart has ${analyzedItems.length} items! Focus on ${lineupText}${typesText} to build your collection.`,
-      priorityTip: `Start with ${lineupText} items${priorityTypes.length > 0 ? ` and ${priorityTypes.join(", ")} types` : ""} first.`
+      priorityTip: `Start with ${lineupText} items${priorityTypes.length > 0 ? ` and ${priorityTypes.join(", ")} types` : ""} first.`,
+      patternInsight,
+      futureOpportunity
     });
   }
 
@@ -1143,23 +1375,41 @@
             <div class="priority-item-name">${item.name}</div>
             <span class="priority-badge priority-${item.priority.toLowerCase()}">${item.priority}</span>
           </div>
-          <div class="priority-item-reasoning">${item.reasoning}</div>
         </div>
       `).join("") : "";
+      console.log("\u{1F50D} DEBUG futureOpportunity:", aiResult.futureOpportunity);
+      console.log("\u{1F50D} DEBUG full aiResult:", aiResult);
       const analysisHTML = `
-      <!-- Priority Analysis Section (Items only) -->
-      <div class="piggybong-priority-section">
-        <h3>Your Fan Priority</h3>
-        ${itemsHTML}
-      </div>
+      <!-- White Card Container with title inside -->
+      <div class="piggybong-insight-card">
+        <h3 class="piggybong-insight-card-title">Overall Insight</h3>
 
-      <!-- Overall Insight Section -->
-      <div class="piggybong-overall-insight-section">
-        <h3>\u{1F4A1} Overall Insight</h3>
+        ${aiResult.items && aiResult.items.length > 0 ? `
+        <div class="piggybong-items-compact">
+          ${aiResult.items.map((item) => `
+            <div class="piggybong-item-badge-row">
+              <span class="priority-badge priority-${item.priority.toLowerCase().replace(/\s+/g, "")}">${item.priority}</span>
+              <span class="item-name-compact">${item.name}</span>
+            </div>
+          `).join("")}
+        </div>
+        ` : ""}
+
         <div class="overall-insight-content">
           ${aiResult.overallInsight}
+          ${aiResult.patternInsight ? `<br><br>${aiResult.patternInsight}` : ""}
         </div>
       </div>
+
+      ${aiResult.futureOpportunity ? `
+      <!-- Smart Fan Tip with Green Frame -->
+      <div class="piggybong-future-opportunity-section">
+        <h3>Smart Fan Tip</h3>
+        <div class="future-opportunity-content">
+          ${aiResult.futureOpportunity}
+        </div>
+      </div>
+      ` : "<!-- Smart Fan Tip: futureOpportunity is null or undefined -->"}
     `;
       console.log("\u{1F50D} Inserting analysis HTML into modalBody...");
       console.log("\u{1F50D} modalBody:", modalBody);

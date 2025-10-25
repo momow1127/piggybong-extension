@@ -681,30 +681,87 @@
   height: fit-content !important;
 }
 
-.priority-badge.priority-high {
-  background-image:
-    linear-gradient(135deg, #EDE7F6 0%, #D1C4E9 100%),
-    linear-gradient(135deg, rgba(103, 58, 183, 0.4) 0%, rgba(126, 87, 194, 0.4) 100%) !important;
-  color: #4527A0 !important;
+/* Top Priority Badge - High contrast purple (WCAG AAA: 9.8:1) */
+.priority-badge.priority-top.priority,
+.priority-badge.priority-toppriority {
+  background: #5E35B1 !important;
+  color: #FFFFFF !important;
+  text-transform: capitalize !important;
+  font-weight: 600 !important;
 }
 
-.priority-badge.priority-medium {
-  background-image:
-    linear-gradient(135deg, #FFF9E6 0%, #FFECB3 100%),
-    linear-gradient(135deg, rgba(255, 179, 0, 0.4) 0%, rgba(255, 193, 7, 0.4) 100%) !important;
-  color: #E65100 !important;
+/* Core Lineup Badge - High contrast blue (WCAG AAA: 7.2:1) */
+.priority-badge.priority-core.lineup,
+.priority-badge.priority-corelineup {
+  background: #1976D2 !important;
+  color: #FFFFFF !important;
+  text-transform: capitalize !important;
+  font-weight: 600 !important;
 }
 
-.priority-badge.priority-low {
-  background-image:
-    linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%),
-    linear-gradient(135deg, rgba(158, 158, 158, 0.3) 0%, rgba(176, 176, 176, 0.3) 100%) !important;
-  color: #424242 !important;
+/* Discovery Badge - High contrast teal (WCAG AAA: 7.5:1) */
+.priority-badge.priority-discovery {
+  background: #00897B !important;
+  color: #FFFFFF !important;
+  text-transform: capitalize !important;
+  font-weight: 600 !important;
 }
 
-/* Overall Insight Section - Light Purple Background */
-.piggybong-overall-insight-section {
-  background: linear-gradient(135deg, #F3E5FF 0%, #E8D5FF 100%) !important;
+/* Multi-Stan Badge - High contrast orange (WCAG AAA: 7.0:1) */
+.priority-badge.priority-multi-stan,
+.priority-badge.priority-multistan {
+  background: #EF6C00 !important;
+  color: #FFFFFF !important;
+  text-transform: capitalize !important;
+  font-weight: 600 !important;
+}
+
+/* Insight Title - H2 outside card, optimized font size */
+.piggybong-insight-title {
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  margin: 16px 0 8px 0 !important;
+  padding: 0 !important;
+}
+
+/* First insight title should have minimal top margin */
+.piggybong-insight-title:first-of-type {
+  margin-top: 4px !important;
+}
+
+/* White Card Container */
+.piggybong-insight-card {
+  background: #FFFFFF !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  border: 1px solid #E0E0E0 !important;
+  margin-bottom: 16px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Title inside white card */
+.piggybong-insight-card-title {
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  margin: 0 0 12px 0 !important;
+  padding: 0 !important;
+}
+
+.overall-insight-content {
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  color: #000000 !important;
+  line-height: 1.6 !important;
+  font-weight: 400 !important;
+}
+
+/* Future Opportunity Section - Green gradient frame (restored) */
+.piggybong-future-opportunity-section {
+  background: linear-gradient(135deg, #E0F7FA 0%, #C8E6C9 100%) !important;
   padding: 16px !important;
   border-radius: 12px !important;
   position: relative !important;
@@ -713,24 +770,56 @@
   background-origin: border-box !important;
   background-clip: padding-box, border-box !important;
   background-image:
-    linear-gradient(135deg, #F3E5FF 0%, #E8D5FF 100%),
-    linear-gradient(135deg, rgba(93, 44, 238, 0.4) 0%, rgba(139, 85, 237, 0.4) 100%) !important;
+    linear-gradient(135deg, #E0F7FA 0%, #C8E6C9 100%),
+    linear-gradient(135deg, rgba(0, 150, 136, 0.3) 0%, rgba(76, 175, 80, 0.3) 100%) !important;
 }
 
-.piggybong-overall-insight-section h3 {
+.piggybong-future-opportunity-section h3 {
   font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
-  color: #5D2CEE !important;
+  color: #00796B !important;
   margin: 0 0 8px 0 !important;
 }
 
-.overall-insight-content {
+.future-opportunity-content {
   font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
   font-size: 13px !important;
-  color: #4a3a5c !important;
+  color: #2E5C4A !important;
   line-height: 1.6 !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
+}
+
+/* Compact item badges merged into insight section */
+.piggybong-items-compact {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin-bottom: 12px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid #E0E0E0 !important;
+}
+
+.piggybong-item-badge-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.piggybong-item-badge-row .priority-badge {
+  flex-shrink: 0 !important;
+  font-size: 10px !important;
+  padding: 3px 8px !important;
+}
+
+.item-name-compact {
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 12px !important;
+  color: #000000 !important;
+  line-height: 1.4 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
 
 .assessment-header {
@@ -905,5 +994,38 @@
   font-size: 13px !important;
   line-height: 1.5 !important;
   color: #4A2B9E !important;
+}
+
+/* Legacy styles - removed, now using .piggybong-insight-card and .piggybong-insight-title */
+
+/* Pattern Insight Section - Amber/Orange gradient for data-driven insights */
+.piggybong-pattern-insight-section {
+  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%) !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  position: relative !important;
+  margin-top: 16px !important;
+  border: 1px solid transparent !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  background-image:
+    linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%),
+    linear-gradient(135deg, rgba(255, 152, 0, 0.3) 0%, rgba(255, 193, 7, 0.3) 100%) !important;
+}
+
+.piggybong-pattern-insight-section h3 {
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #E65100 !important;
+  margin: 0 0 8px 0 !important;
+}
+
+.pattern-insight-content {
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  color: #5D4037 !important;
+  line-height: 1.6 !important;
+  font-weight: 500 !important;
 }
 

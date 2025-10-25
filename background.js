@@ -23,93 +23,203 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // AI Analysis Function
+// 🎯 HYBRID APPROACH: Only generates insights, NOT badge classification
+// Badge classification is done by JavaScript in content script for 100% accuracy
 async function analyzeWithGeminiNano(data) {
-  const { items, userGroups, priorityTypes } = data;
+  const { items, userGroups, priorityTypes, patterns, classifiedItems } = data;
 
-  console.log("🐷 Checking for AI in background...");
-  console.log("  - self.ai:", !!self.ai);
-  console.log("  - self.ai?.languageModel:", !!(self.ai && self.ai.languageModel));
-  console.log("  - chrome.aiOriginTrial:", !!chrome.aiOriginTrial);
-  console.log("  - ai (global):", typeof ai !== 'undefined' ? !!ai : false);
+  console.log("🐷 Checking for AI in background (NEW 2025 API)...");
 
-  // Try multiple API endpoints (Chrome is still experimenting)
-  let aiAPI = null;
+  // Use the NEW LanguageModel API (2025 syntax - replaces window.ai)
+  let LanguageModelAPI = null;
 
-  if (self.ai && self.ai.languageModel) {
-    aiAPI = self.ai.languageModel;
-    console.log("🐷 Using self.ai.languageModel");
-  } else if (typeof ai !== 'undefined' && ai.languageModel) {
-    aiAPI = ai.languageModel;
-    console.log("🐷 Using global ai.languageModel");
-  } else if (chrome.aiOriginTrial && chrome.aiOriginTrial.languageModel) {
-    aiAPI = chrome.aiOriginTrial.languageModel;
-    console.log("🐷 Using chrome.aiOriginTrial.languageModel");
+  // Try to access LanguageModel (might need a moment to initialize)
+  if (typeof LanguageModel !== 'undefined') {
+    LanguageModelAPI = LanguageModel;
+    console.log("🐷 ✅ Found global LanguageModel API");
+  } else if (typeof self.LanguageModel !== 'undefined') {
+    LanguageModelAPI = self.LanguageModel;
+    console.log("🐷 ✅ Found self.LanguageModel API");
+  } else if (typeof globalThis.LanguageModel !== 'undefined') {
+    LanguageModelAPI = globalThis.LanguageModel;
+    console.log("🐷 ✅ Found globalThis.LanguageModel API");
+  } else {
+    // Wait a bit and try again (API might still be initializing)
+    console.log("🐷 ⏳ LanguageModel not ready, waiting 100ms...");
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    if (typeof LanguageModel !== 'undefined') {
+      LanguageModelAPI = LanguageModel;
+      console.log("🐷 ✅ Found LanguageModel after waiting");
+    }
   }
 
-  if (!aiAPI) {
-    throw new Error("Gemini Nano not available - no API endpoint found");
+  if (!LanguageModelAPI) {
+    throw new Error("Gemini Nano not available - LanguageModel API not found. Make sure flags are enabled in chrome://flags");
   }
 
-  const capabilities = await aiAPI.capabilities();
-  console.log("🐷 AI capabilities:", capabilities);
+  // Check availability (NEW API - replaces capabilities())
+  console.log("🐷 Checking LanguageModel.availability()...");
+  const availability = await LanguageModelAPI.availability();
+  console.log("🐷 Availability status:", availability);
 
-  if (capabilities.available === "no") {
-    throw new Error("AI not available on this device");
+  if (availability === "unavailable") {
+    throw new Error("Gemini Nano model is unavailable on this device");
   }
 
-  // Create AI session
-  console.log("🐷 Creating AI session...");
-  const session = await aiAPI.create({
-    temperature: 0.3,
-    topK: 3,
+  if (availability === "downloading") {
+    throw new Error("Gemini Nano model is currently downloading. Please wait a few minutes and try again.");
+  }
+
+  if (availability === "downloadable") {
+    throw new Error("Gemini Nano model needs to be downloaded. Go to chrome://components and click 'Check for update' on 'Optimization Guide On Device Model'");
+  }
+
+  // Create AI session (NEW API - direct call)
+  console.log("🐷 Creating LanguageModel session...");
+  const session = await LanguageModelAPI.create({
+    temperature: 0.1, // Lower = faster, more deterministic
+    topK: 1,          // Lower = faster, less creative
   });
 
-  // Build prompt
-  const itemsList = items.map((item, i) => `${i + 1}. ${item.name}`).join('\n');
+  // Build prompt - INSIGHTS ONLY (badges already classified by JavaScript)
   const lineupText = userGroups.join(', ');
   const typesText = priorityTypes.length > 0 ? priorityTypes.join(', ') : 'none selected';
 
-  const prompt = `You are Piggy Bong, a supportive K-pop shopping assistant.
+  // Build list showing items with their pre-classified badges
+  const itemsWithBadges = classifiedItems.map((item, i) =>
+    `${i + 1}. ${item.name} [${item.priority}]`
+  ).join('\n');
 
-USER'S PREFERENCES:
-- Lineup (favorite groups): ${lineupText}
-- Priority item types: ${typesText}
+  // DEBUG: Log what we're sending to AI
+  console.log('🐷 DEBUG - Data being sent to AI:');
+  console.log('  userGroups:', lineupText);
+  console.log('  priorityTypes:', typesText);
+  console.log('  classifiedItems:', classifiedItems.map(i => `${i.name.substring(0, 30)}... → ${i.priority}`));
 
-CART ITEMS:
-${itemsList}
+  // Build pattern context section (simplified for speed)
+  const isFirstCart = !patterns || patterns.totalCarts < 2;
+  let patternContext = '';
 
-TASK: Analyze each item. An item is HIGH priority ONLY if:
-1. The artist/group name matches one of the lineup groups AND
-2. The item type matches one of the priority types
+  if (!isFirstCart) {
+    const topArtist = Object.entries(patterns.artistFrequency)
+      .sort((a, b) => b[1] - a[1])[0];
 
-Otherwise, it's MEDIUM priority.
+    const peakMonth = Object.entries(patterns.seasonalPatterns)
+      .sort((a, b) => b[1] - a[1])[0];
 
-REASONING RULES:
-- If BOTH artist and type match → "Perfect match - Your lineup + Priority type"
-- If artist matches but type doesn't → "Core lineup - Expanding your collection"
-- If type matches but artist doesn't → "Priority type - Exploring new groups"
-- If neither match → "Multi-stan opportunity - Broadening horizons"
+    const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
+    const abandoned = patterns.abandonedItems[0];
 
-Return ONLY valid JSON (no other text):
-{
-  "items": [
-    {"name": "item name", "priority": "HIGH or MEDIUM", "reasoning": "reason", "score": 5 or 3}
-  ],
-  "overallInsight": "Encouraging message about their ${items.length} items and preferences",
-  "priorityTip": "Tip focusing on ${lineupText} and ${typesText}"
-}`;
+    patternContext = `\nHistory: ${patterns.totalCarts} carts. Top: ${topArtist[0]}. Peak: ${peakMonth[0]}, now: ${currentMonth}.`;
 
-  console.log("🐷 Sending prompt to AI...");
+    if (abandoned) {
+      patternContext += ` Abandoned: "${abandoned.name}" (${abandoned.timesAdded}x).`;
+    }
+  }
+
+  // Different prompts for first-time vs returning users
+  let prompt;
+
+  if (isFirstCart) {
+    // FIRST CART: Welcome message, explain badges, encourage exploration
+    prompt = `You help K-pop fans understand their shopping cart.
+
+Fan's favorite groups: ${lineupText}
+Fan's priority types: ${typesText}
+
+Cart items (already classified):
+${itemsWithBadges}
+
+Badge meanings:
+- "Top Priority" = Favorite group + Priority item type
+- "Core Lineup" = Favorite group but different item type
+- "Discovery" = Priority item type but different group
+- "Multi-Stan" = Exploring beyond usual preferences
+
+This is the fan's FIRST cart! Generate a welcoming, encouraging message.
+
+IMPORTANT: Always use second-person "you/your" - speak directly to the fan!
+- ✅ "You're exploring..." NOT "The user is exploring..." or "They are exploring..."
+- ✅ "your collection" NOT "their collection"
+
+"overallInsight": Welcome them! Comment on:
+  - What type of items are they starting with?
+  - Encourage their collecting journey (2 sentences max)
+  - Be excited and welcoming!
+
+"futureOpportunity": First-timer tip. Keep brief (1 sentence or null).
+  - Tip about tracking comebacks, watching for deals, or starting small
+  - NO talk about "peak months" or "history" - they're just starting!
+
+JSON only:
+{"overallInsight":"2 sentences max","futureOpportunity":"1 sentence or null"}`;
+  } else {
+    // RETURNING USER: Pattern analysis, compare to history
+    prompt = `You help K-pop fans understand their shopping cart.
+
+Fan's favorite groups: ${lineupText}
+Fan's priority types: ${typesText}
+${patternContext}
+
+Cart items (already classified):
+${itemsWithBadges}
+
+Badge meanings:
+- "Top Priority" = Favorite group + Priority item type
+- "Core Lineup" = Favorite group but different item type
+- "Discovery" = Priority item type but different group
+- "Multi-Stan" = Exploring beyond usual preferences
+
+This fan has cart history! Use patterns to provide insights.
+
+IMPORTANT: Always use second-person "you/your" - speak directly to the fan!
+- ✅ "You're exploring..." NOT "The user is exploring..." or "They are exploring..."
+- ✅ "your collection" NOT "their collection"
+
+"overallInsight": Analyze compared to their history:
+  - Are they sticking to patterns or trying something new?
+  - Compare to their top artist or usual item types
+  - Brief encouraging message (2 sentences max)
+
+"futureOpportunity": Pattern-based tip. Keep brief (1 sentence or null).
+  - Only mention if genuinely useful (e.g., "You usually shop more in X month")
+  - If abandoned items already mentioned: null
+  - Otherwise: null or brief actionable tip
+
+JSON only:
+{"overallInsight":"2 sentences max","futureOpportunity":"1 sentence or null"}`;
+  }
+
+  console.log("🐷 Sending prompt to AI (insights only)...");
+  console.log('🐷 DEBUG - Full prompt:');
+  console.log(prompt);
+  console.log('🐷 DEBUG - End of prompt\n');
+
   const aiResponse = await session.prompt(prompt);
   console.log("🐷 AI response received:", aiResponse.substring(0, 100));
+  console.log('🐷 DEBUG - Full AI response:');
+  console.log(aiResponse);
+  console.log('🐷 DEBUG - End of AI response\n');
 
   // Parse JSON
   const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
   const jsonStr = jsonMatch ? jsonMatch[0] : aiResponse;
-  const aiResult = JSON.parse(jsonStr);
+  const aiInsights = JSON.parse(jsonStr);
+
+  // DEBUG: Log parsed insights
+  console.log('🐷 DEBUG - Parsed AI insights:');
+  console.log('  overallInsight:', aiInsights.overallInsight);
+  console.log('  futureOpportunity:', aiInsights.futureOpportunity);
 
   session.destroy();
-  return aiResult;
+
+  // Return only insights (items already classified by JavaScript)
+  return {
+    overallInsight: aiInsights.overallInsight,
+    futureOpportunity: aiInsights.futureOpportunity,
+    priorityTip: "Focus on lineup matches first, then explore new groups at your pace"
+  };
 }
 
 // ===========================================

@@ -1,4 +1,12 @@
 {
+  "name": "piggybong-extension",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "watch": "esbuild src/content/index.js --bundle --outfile=content.js --format=iife --platform=browser --target=chrome120 --watch",
+    "clean": "rm -f content.js && echo '🧹 Cleaned old build.'"
+  },
   "devDependencies": {
     "esbuild": "^0.25.11"
   }

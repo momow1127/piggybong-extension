@@ -3,7 +3,7 @@
 // Usage: npm run build or node build.js
 // ===========================================
 
-const esbuild = require('esbuild');
+import esbuild from 'esbuild';
 
 async function build() {
   try {

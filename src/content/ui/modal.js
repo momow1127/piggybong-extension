@@ -559,7 +559,7 @@ async function runAIAnalysis(pageText, pageUrl, productInfo) {
       contextSummary = `Analyzing ${productInfo.name}`;
     }
 
-    // Build individual item priority cards (merged in one frame)
+    // Build individual item priority cards (badge only, no reasoning text)
     const itemsHTML = aiResult.items && aiResult.items.length > 0
       ? aiResult.items.map(item => `
         <div class="piggybong-priority-item">
@@ -567,26 +567,48 @@ async function runAIAnalysis(pageText, pageUrl, productInfo) {
             <div class="priority-item-name">${item.name}</div>
             <span class="priority-badge priority-${item.priority.toLowerCase()}">${item.priority}</span>
           </div>
-          <div class="priority-item-reasoning">${item.reasoning}</div>
         </div>
       `).join('')
       : '';
 
     // Add AI analysis results below product card
-    const analysisHTML = `
-      <!-- Priority Analysis Section (Items only) -->
-      <div class="piggybong-priority-section">
-        <h3>Your Fan Priority</h3>
-        ${itemsHTML}
-      </div>
+    // NEW LAYOUT: H2 title outside card, white card background
 
-      <!-- Overall Insight Section -->
-      <div class="piggybong-overall-insight-section">
-        <h3>💡 Overall Insight</h3>
+    // DEBUG: Log futureOpportunity to see if it exists
+    console.log('🔍 DEBUG futureOpportunity:', aiResult.futureOpportunity);
+    console.log('🔍 DEBUG full aiResult:', aiResult);
+
+    const analysisHTML = `
+      <!-- White Card Container with title inside -->
+      <div class="piggybong-insight-card">
+        <h3 class="piggybong-insight-card-title">Overall Insight</h3>
+
+        ${aiResult.items && aiResult.items.length > 0 ? `
+        <div class="piggybong-items-compact">
+          ${aiResult.items.map(item => `
+            <div class="piggybong-item-badge-row">
+              <span class="priority-badge priority-${item.priority.toLowerCase().replace(/\s+/g, '')}">${item.priority}</span>
+              <span class="item-name-compact">${item.name}</span>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+
         <div class="overall-insight-content">
           ${aiResult.overallInsight}
+          ${aiResult.patternInsight ? `<br><br>${aiResult.patternInsight}` : ''}
         </div>
       </div>
+
+      ${aiResult.futureOpportunity ? `
+      <!-- Smart Fan Tip with Green Frame -->
+      <div class="piggybong-future-opportunity-section">
+        <h3>Smart Fan Tip</h3>
+        <div class="future-opportunity-content">
+          ${aiResult.futureOpportunity}
+        </div>
+      </div>
+      ` : '<!-- Smart Fan Tip: futureOpportunity is null or undefined -->'}
     `;
 
     // Insert AI results after product card
