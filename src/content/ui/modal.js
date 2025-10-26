@@ -25,9 +25,18 @@ export function showOnboardingModal(callback) {
     <div class="piggybong-modal-overlay" aria-hidden="true"></div>
     <div class="piggybong-modal-content" style="max-width: 450px;">
       <div class="piggybong-modal-header">
-        <div class="piggybong-brand">
-          <img src="${logoUrl}" alt="Piggy Bong" class="piggybong-header-logo">
-          <span id="piggybong-onboarding-title" class="piggybong-brand-name">${isEditing ? 'Edit Preferences' : 'Welcome to Piggy Bong!'}</span>
+        <div class="piggybong-header-left">
+          ${isEditing ? `
+          <button class="piggybong-back-btn" aria-label="Back" title="Back to analysis">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          ` : ''}
+          <div class="piggybong-brand">
+            <img src="${logoUrl}" alt="Piggy Bong" class="piggybong-header-logo">
+            <span id="piggybong-onboarding-title" class="piggybong-brand-name">${isEditing ? 'Edit Preferences' : 'Welcome to Piggy Bong!'}</span>
+          </div>
         </div>
         <button class="piggybong-modal-close-btn" aria-label="Skip">×</button>
       </div>
@@ -128,14 +137,61 @@ export function showOnboardingModal(callback) {
 
   document.body.appendChild(modal);
 
+  // Hide floating button when onboarding modal opens
+  const floatingButton = document.getElementById('piggybong-floating-container');
+  console.log('🐷 Onboarding modal - Looking for floating button:', floatingButton ? 'FOUND' : 'NOT FOUND');
+  if (floatingButton) {
+    floatingButton.style.display = 'none';
+    console.log('🐷 Onboarding modal - Floating button HIDDEN');
+  } else {
+    console.warn('🐷 Onboarding modal - Cannot hide floating button (not found in DOM)');
+  }
+
   // ============================================
   // Lineup Search/Autocomplete Logic
   // ============================================
   const KPOP_GROUPS = [
-    'NewJeans', 'Stray Kids', 'LE SSERAFIM', 'IVE', 'MIYEON', 'SHINee',
-    'BLACKPINK', 'BTS', 'TWICE', 'aespa', 'Red Velvet', 'ITZY',
-    'SEVENTEEN', 'NCT', 'EXO', 'TXT', 'ENHYPEN', 'ATEEZ',
-    'THE BOYZ', 'Kep1er', 'NMIXX', 'TREASURE', 'MONSTA X'
+    // 4th Gen Girl Groups
+    'NewJeans', 'IVE', 'LE SSERAFIM', 'aespa', 'NMIXX', 'Kep1er', 'STAYC',
+    'Billlie', 'VIVIZ', 'tripleS', 'LIGHTSUM', 'CLASS:y', 'ILY:1', 'FIFTY FIFTY',
+    'KISS OF LIFE', 'BABYMONSTER', 'ARTMS', 'YOUNG POSSE',
+
+    // 3rd Gen Girl Groups
+    'BLACKPINK', 'TWICE', 'Red Velvet', 'ITZY', 'Oh My Girl', 'WJSN', 'EVERGLOW',
+    'Weeekly', 'Rocket Punch', 'fromis_9', 'LOONA', 'CLC', 'Dreamcatcher',
+    'Apink', 'GFRIEND', 'MOMOLAND', 'Weki Meki',
+
+    // Legendary Girl Groups
+    'Girls\' Generation', 'SNSD', '2NE1', 'Wonder Girls', 'f(x)', 'KARA',
+    'SISTAR', 'T-ara', 'After School', 'AOA', 'Girl\'s Day', 'miss A',
+
+    // 4th Gen Boy Groups
+    'Stray Kids', 'TXT', 'ENHYPEN', 'ATEEZ', 'THE BOYZ', 'TREASURE',
+    'CRAVITY', 'DRIPPIN', 'OMEGA X', 'TNX', 'xikers', 'ZEROBASEONE', 'ZB1',
+    'BOYNEXTDOOR', 'RIIZE', 'PLAVE', '&TEAM', 'TEMPEST', 'GHOST9',
+
+    // 3rd Gen Boy Groups
+    'BTS', 'SEVENTEEN', 'NCT', 'NCT 127', 'NCT DREAM', 'WayV', 'Monsta X',
+    'GOT7', 'Pentagon', 'SF9', 'The Boyz', 'ONEUS', 'ONEWE', 'ASTRO',
+    'Victon', 'Golden Child', 'ONF', 'VERIVERY', 'AB6IX', 'CIX',
+
+    // Legendary Boy Groups
+    'EXO', 'SHINee', 'Super Junior', 'TVXQ', 'Big Bang', 'INFINITE', 'BTOB',
+    'VIXX', 'Block B', 'Winner', 'iKON', 'B.A.P', 'Teen Top', 'BEAST',
+    'MBLAQ', '2PM', 'SS501', 'Shinhwa', 'UKISS', 'ZE:A',
+
+    // Soloists
+    'IU', 'Taeyeon', 'Sunmi', 'Chungha', 'HyunA', 'Taemin', 'Kai', 'Baekhyun',
+    'Chen', 'D.O.', 'Kang Daniel', 'Jay Park', 'Crush', 'Dean', 'Zico',
+    'G-Dragon', 'Taeyang', 'Daesung', 'CL', 'PSY', 'Rain', 'BoA', 'Heize',
+
+    // Solo - (G)I-DLE members
+    'MIYEON', 'Soyeon', 'Yuqi',
+
+    // Groups with unique names
+    '(G)I-DLE', 'GOT the beat', 'SuperM', 'AKMU', 'Bolbbalgan4', 'Mamamoo',
+    'PURPLE KISS', 'Brave Girls', 'Cherry Bullet', 'Lapillus', 'LE SSERAFIM',
+    'cignature', 'H1-KEY', 'PRIMROSE', 'ICHILLIN\'', 'CSR', 'ATBO'
   ];
 
   const lineupSearchInput = modal.querySelector('#lineup-search-input');
@@ -339,8 +395,52 @@ export function showOnboardingModal(callback) {
     }
 
     modal.remove();
-    if (callback) callback();
+
+    // If editing (not first-time), re-analyze with NEW preferences
+    if (isEditing) {
+      console.log('🐷 Preferences updated - need to re-analyze with new preferences!');
+      // Close the old cached analysis modal
+      const oldAnalysisModal = document.getElementById('piggybong-modal');
+      if (oldAnalysisModal) {
+        console.log('🐷 Removing old analysis modal (preferences changed)');
+        oldAnalysisModal.remove();
+      }
+
+      // Re-analyze with fresh page content and NEW preferences
+      const pageText = document.body.innerText || '';
+      const pageUrl = window.location.href;
+      console.log('🐷 Re-analyzing cart with updated preferences...');
+
+      // Trigger fresh analysis with new preferences
+      showAnalysisModal(pageText, pageUrl);
+    } else {
+      // First-time setup, just call callback to show analysis
+      if (callback) callback();
+    }
   });
+
+  // Back button (only shown when editing)
+  const backBtn = modal.querySelector('.piggybong-back-btn');
+  if (backBtn) {
+    backBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      console.log('🐷 ========== BACK BUTTON CLICKED ==========');
+      console.log('🐷 Callback exists?', !!callback);
+
+      // Close preferences modal
+      modal.remove();
+      console.log('🐷 Preferences modal removed');
+
+      // Reveal the hidden analysis modal (callback shows it)
+      if (callback) {
+        console.log('🐷 Calling callback to reveal analysis modal...');
+        callback();
+        console.log('🐷 Callback executed');
+      } else {
+        console.error('🐷 ERROR: No callback provided to back button!');
+      }
+    });
+  }
 
   // Skip onboarding (only shown on first visit)
   const skipBtn = modal.querySelector('#piggy-skip-onboarding');
@@ -361,6 +461,7 @@ export function showOnboardingModal(callback) {
   if (skipBtn) {
     skipBtn.addEventListener('click', skipOnboarding);
   }
+
   closeBtn.addEventListener('click', skipOnboarding);
   overlay.addEventListener('click', skipOnboarding);
 
@@ -376,30 +477,42 @@ export function showOnboardingModal(callback) {
   const originalRemove = modal.remove.bind(modal);
   modal.remove = function() {
     document.removeEventListener('keydown', handleEscapeKey);
+
+    // Show floating button again when modal closes
+    const floatingButton = document.getElementById('piggybong-floating-container');
+    if (floatingButton) {
+      floatingButton.style.display = '';  // Reset to default (removes inline style)
+    }
+
     originalRemove();
   };
 }
 
 // Function to show modal
-export function showPiggyBongModal(pageText, pageUrl) {
+export function showPiggyBongModal(pageText, pageUrl, options = {}) {
   console.log('🐷 showPiggyBongModal called');
   console.log('🐷 Page URL:', pageUrl);
+  console.log('🐷 Options:', options);
 
-  // Check if this is first time (no personalization) and show onboarding
-  if (!PersonalizationHelper.hasPersonalization()) {
+  const isDemo = options.isDemo || false;
+
+  // Check if this is first time (no personalization) and NOT demo mode
+  if (!isDemo && !PersonalizationHelper.hasPersonalization()) {
     showOnboardingModal(() => {
       // After onboarding (or skip), show main analysis modal
-      showAnalysisModal(pageText, pageUrl);
+      showAnalysisModal(pageText, pageUrl, { isDemo });
     });
     return;
   }
 
-  // Already has personalization, go straight to analysis
-  showAnalysisModal(pageText, pageUrl);
+  // Already has personalization or is demo, go straight to analysis
+  showAnalysisModal(pageText, pageUrl, { isDemo });
 }
 
 // Main analysis modal (renamed from showPiggyBongModal)
-export function showAnalysisModal(pageText, pageUrl) {
+export function showAnalysisModal(pageText, pageUrl, options = {}) {
+  const isDemo = options.isDemo || false;
+
   // Remove existing modal if any
   const existingModal = document.getElementById('piggybong-modal');
   if (existingModal) {
@@ -410,6 +523,7 @@ export function showAnalysisModal(pageText, pageUrl) {
   console.log('🐷 About to call extractProductInfo...');
   const productInfo = extractProductInfo(pageText);
   console.log('🐷 extractProductInfo returned:', productInfo);
+  console.log('🐷 isDemo:', isDemo);
 
   // Create modal overlay
   const modal = document.createElement('div');
@@ -442,7 +556,9 @@ export function showAnalysisModal(pageText, pageUrl) {
       <div class="piggybong-modal-body" role="main" aria-live="polite" aria-atomic="true">
         <!-- Loading state for AI analysis -->
         <div class="piggybong-loading">
-          <div class="piggybong-spinner" role="status" aria-label="Loading"></div>
+          <div class="piggybong-spinner" role="status" aria-label="Loading">
+            <img src="${chrome.runtime.getURL('piggybong.png')}" alt="Piggybong lightstick">
+          </div>
           <p>Analyzing your cart...</p>
           <p style="font-size: 12px; color: #757575; margin-top: 8px;">This takes a few seconds</p>
         </div>
@@ -455,18 +571,40 @@ export function showAnalysisModal(pageText, pageUrl) {
   console.log('🔍 Modal classList:', modal.classList);
   console.log('🔍 Modal display style:', window.getComputedStyle(modal).display);
 
+  // Hide floating button when analysis modal opens
+  const floatingButton = document.getElementById('piggybong-floating-container');
+  console.log('🐷 Analysis modal - Looking for floating button:', floatingButton ? 'FOUND' : 'NOT FOUND');
+  if (floatingButton) {
+    floatingButton.style.display = 'none';
+    console.log('🐷 Analysis modal - Floating button HIDDEN');
+  } else {
+    console.warn('🐷 Analysis modal - Cannot hide floating button (not found in DOM)');
+  }
+
   // Settings button handler
   const settingsBtn = modal.querySelector('.piggybong-settings-btn');
   settingsBtn.addEventListener('click', () => {
-    // Close current modal
-    modal.remove();
+    console.log('🐷 Settings clicked - hiding analysis modal:', modal.id);
+    // Hide current modal (don't remove - we'll show it again)
+    modal.style.display = 'none';
 
     // Show onboarding modal for editing preferences
     showOnboardingModal(() => {
-      // After editing, show analysis modal again with FRESH page content
-      const freshPageText = document.body.innerText || '';
-      const freshPageUrl = window.location.href;
-      showAnalysisModal(freshPageText, freshPageUrl);
+      console.log('🐷 ========== CALLBACK EXECUTED (REVEALING MODAL) ==========');
+      console.log('🐷 Looking for analysis modal with id:', modal.id);
+      console.log('🐷 Modal still in DOM?', document.body.contains(modal));
+      console.log('🐷 Modal current display:', modal.style.display);
+      console.log('🐷 All modals in page:', document.querySelectorAll('.piggybong-modal').length);
+
+      // After saving, show the hidden analysis modal again (no re-analysis!)
+      if (document.body.contains(modal)) {
+        modal.style.display = '';
+        console.log('🐷 ✅ Modal revealed successfully!');
+        console.log('🐷 Modal final display:', modal.style.display);
+      } else {
+        console.error('🐷 ❌ ERROR: Modal was removed from DOM!');
+        console.log('🐷 Searching for modal by ID:', document.getElementById(modal.id));
+      }
     });
   });
 
@@ -495,6 +633,13 @@ export function showAnalysisModal(pageText, pageUrl) {
   const originalRemove = modal.remove.bind(modal);
   modal.remove = function() {
     document.removeEventListener('keydown', handleEscapeKey);
+
+    // Show floating button again when modal closes
+    const floatingButton = document.getElementById('piggybong-floating-container');
+    if (floatingButton) {
+      floatingButton.style.display = '';  // Reset to default (removes inline style)
+    }
+
     originalRemove();
   };
 
@@ -506,15 +651,18 @@ export function showAnalysisModal(pageText, pageUrl) {
   }, 10);
 
   // Run AI analysis (product card already shown)
-  runAIAnalysis(pageText, pageUrl, productInfo);
+  runAIAnalysis(pageText, pageUrl, productInfo, isDemo);
 }
 
 // Function to run AI analysis
-async function runAIAnalysis(pageText, pageUrl, productInfo) {
+async function runAIAnalysis(pageText, pageUrl, productInfo, isDemo = false) {
   const modalBody = document.querySelector('.piggybong-modal-body');
+  const hasPersonalization = PersonalizationHelper.hasPersonalization();
 
   console.log('🐷 runAIAnalysis() called');
   console.log('🐷 productInfo:', productInfo);
+  console.log('🐷 isDemo:', isDemo);
+  console.log('🐷 hasPersonalization:', hasPersonalization);
 
   // Check if productInfo is null (cart is empty or extraction failed)
   if (!productInfo || productInfo === null) {
@@ -545,31 +693,26 @@ async function runAIAnalysis(pageText, pageUrl, productInfo) {
       loadingDiv.remove();
     }
 
-    // Generate context summary
-    let contextSummary = '';
-    if (productInfo.isCart && productInfo.items && productInfo.items.length > 0) {
-      const itemNames = productInfo.items.map(item => {
-        const name = item.name.split('-')[0].trim();
-        return name;
-      });
-      const displayNames = itemNames.slice(0, 2).join(' & ');
-      const itemCount = productInfo.items.length;
-      contextSummary = `Analyzing ${itemCount} item${itemCount > 1 ? 's' : ''} from ${displayNames}${itemCount > 2 ? ' and more' : ''}`;
-    } else {
-      contextSummary = `Analyzing ${productInfo.name}`;
-    }
+    // Determine analysis mode badge (only show Demo Mode badge)
+    const analysisModeBadge = isDemo
+      ? '<span style="display: inline-block; padding: 4px 12px; background: #E8F5E9; color: #2E7D32; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 16px;">Demo Mode</span>'
+      : ''; // No badge for regular analysis
 
-    // Build individual item priority cards (badge only, no reasoning text)
-    const itemsHTML = aiResult.items && aiResult.items.length > 0
-      ? aiResult.items.map(item => `
-        <div class="piggybong-priority-item">
-          <div class="priority-item-header-row">
-            <div class="priority-item-name">${item.name}</div>
-            <span class="priority-badge priority-${item.priority.toLowerCase()}">${item.priority}</span>
-          </div>
-        </div>
-      `).join('')
-      : '';
+    // Post-demo CTA (only show in demo mode)
+    const postDemoCTA = isDemo ? `
+      <div style="margin-top: 24px; padding: 16px; background: linear-gradient(135deg, rgba(93, 44, 238, 0.05) 0%, rgba(139, 85, 237, 0.05) 100%); border-radius: 12px; border: 1px solid rgba(93, 44, 238, 0.2);">
+        <p style="font-size: 14px; color: #666; margin: 0 0 12px 0; line-height: 1.5;">
+          Want insights tuned to YOUR lineup?
+        </p>
+        <button
+          id="set-preferences-after-demo"
+          class="piggybong-primary-btn"
+          style="width: 100%; padding: 12px 24px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); border: none; border-radius: 50px; color: white; font-weight: 600; cursor: pointer; font-size: 14px; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 8px rgba(93, 44, 238, 0.3);"
+        >
+          Set My Preferences
+        </button>
+      </div>
+    ` : '';
 
     // Add AI analysis results below product card
     // NEW LAYOUT: H2 title outside card, white card background
@@ -579,6 +722,8 @@ async function runAIAnalysis(pageText, pageUrl, productInfo) {
     console.log('🔍 DEBUG full aiResult:', aiResult);
 
     const analysisHTML = `
+      ${analysisModeBadge}
+
       <!-- White Card Container with title inside -->
       <div class="piggybong-insight-card">
         <h3 class="piggybong-insight-card-title">Overall Insight</h3>
@@ -605,10 +750,17 @@ async function runAIAnalysis(pageText, pageUrl, productInfo) {
       <div class="piggybong-future-opportunity-section">
         <h3>Smart Fan Tip</h3>
         <div class="future-opportunity-content">
-          ${aiResult.futureOpportunity}
+          <p style="margin-bottom: ${aiResult.futureOpportunity.suggestPreferenceUpdate ? '12px' : '0'};">
+            ${typeof aiResult.futureOpportunity === 'object' ? aiResult.futureOpportunity.text : aiResult.futureOpportunity}
+          </p>
+          ${aiResult.futureOpportunity.suggestPreferenceUpdate ? `
+            <button class="update-lineup-btn">Update Lineup</button>
+          ` : ''}
         </div>
       </div>
       ` : '<!-- Smart Fan Tip: futureOpportunity is null or undefined -->'}
+
+      ${postDemoCTA}
     `;
 
     // Insert AI results after product card
@@ -617,6 +769,40 @@ async function runAIAnalysis(pageText, pageUrl, productInfo) {
     console.log('🔍 analysisHTML length:', analysisHTML.length);
     modalBody.insertAdjacentHTML('beforeend', analysisHTML);
     console.log('🔍 Analysis HTML inserted successfully!');
+
+    // Add click handler for "Update Lineup" button
+    const updateLineupBtn = modalBody.querySelector('.update-lineup-btn');
+    if (updateLineupBtn) {
+      updateLineupBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('🐷 User clicked "Update Lineup" button');
+
+        // Close current modal
+        const modal = document.getElementById('piggybong-modal');
+        if (modal) modal.remove();
+
+        // Open preferences modal (onboarding screen)
+        showOnboardingModal();
+      });
+    }
+
+    // Add click handler for "Set My Preferences" button after demo
+    const setPreferencesAfterDemo = modalBody.querySelector('#set-preferences-after-demo');
+    if (setPreferencesAfterDemo) {
+      setPreferencesAfterDemo.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('🐷 User clicked "Set My Preferences" after demo');
+
+        // Close current modal
+        const modal = document.getElementById('piggybong-modal');
+        if (modal) modal.remove();
+
+        // Open preferences modal with inline form
+        showOnboardingModal(() => {
+          console.log('🐷 Preferences saved after demo');
+        });
+      });
+    }
   } catch (error) {
     console.error('🐷 ❌ AI analysis failed:', error);
     console.error('🐷 Error details:', error.message);

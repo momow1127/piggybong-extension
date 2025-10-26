@@ -122,7 +122,7 @@ async function analyzeWithGeminiNano(data) {
   let prompt;
 
   if (isFirstCart) {
-    // FIRST CART: Welcome message, explain badges, encourage exploration
+    // FIRST CART: Explain badges first, then give advice
     prompt = `You help K-pop fans understand their shopping cart.
 
 Fan's favorite groups: ${lineupText}
@@ -132,30 +132,37 @@ Cart items (already classified):
 ${itemsWithBadges}
 
 Badge meanings:
-- "Top Priority" = Favorite group + Priority item type
-- "Core Lineup" = Favorite group but different item type
-- "Discovery" = Priority item type but different group
-- "Multi-Stan" = Exploring beyond usual preferences
+- "Top Priority" = Matches your lineup AND priority types (buy this first!)
+- "Core Lineup" = Your favorite group, but different item type
+- "Discovery" = Your preferred item type, but exploring new groups
+- "Multi-Stan" = Exploring beyond your usual favorites
 
-This is the fan's FIRST cart! Generate a welcoming, encouraging message.
+TASK: Explain the badges in THIS cart, then give shopping advice.
 
-IMPORTANT: Always use second-person "you/your" - speak directly to the fan!
-- ✅ "You're exploring..." NOT "The user is exploring..." or "They are exploring..."
-- ✅ "your collection" NOT "their collection"
+IMPORTANT: Sound natural, not like AI!
+- Use "you/your" (talk directly to them)
+- NO dashes, NO hyphens, NO bullet points, NO corporate speak
+- Short sentences. Period. Like texting a friend.
+- Connect thoughts with periods, not dashes.
 
-"overallInsight": Welcome them! Comment on:
-  - What type of items are they starting with?
-  - Encourage their collecting journey (2 sentences max)
-  - Be excited and welcoming!
+"overallInsight" (MAX 2 sentences - keep it SHORT):
+  1. Count badges + explain why (based on lineup)
+  2. Give quick actionable advice ONLY if needed
 
-"futureOpportunity": First-timer tip. Keep brief (1 sentence or null).
-  - Tip about tracking comebacks, watching for deals, or starting small
-  - NO talk about "peak months" or "history" - they're just starting!
+Good examples (SHORT & PUNCHY):
+- "Three Top Priority NewJeans items. Perfect for your lineup!"
+- "Two Top Priority, one Multi-Stan. If budget is tight, prioritize your lineup first."
+- "All Discovery badges. You're exploring outside your lineup today!"
+- "Mix of Top Priority and Multi-Stan. Your lineup items are the safe bets."
+
+Bad examples (TOO LONG):
+- "You have three Top Priority items in your cart. That's awesome because they all feature NewJeans..."
+- Long explanations with multiple sentences about each item
 
 JSON only:
-{"overallInsight":"2 sentences max","futureOpportunity":"1 sentence or null"}`;
+{"overallInsight":"MAX 2 sentences"}`;
   } else {
-    // RETURNING USER: Pattern analysis, compare to history
+    // RETURNING USER: Compare to patterns, explain badges, give advice
     prompt = `You help K-pop fans understand their shopping cart.
 
 Fan's favorite groups: ${lineupText}
@@ -166,29 +173,35 @@ Cart items (already classified):
 ${itemsWithBadges}
 
 Badge meanings:
-- "Top Priority" = Favorite group + Priority item type
-- "Core Lineup" = Favorite group but different item type
-- "Discovery" = Priority item type but different group
-- "Multi-Stan" = Exploring beyond usual preferences
+- "Top Priority" = Matches your lineup AND priority types (buy this first!)
+- "Core Lineup" = Your favorite group, but different item type
+- "Discovery" = Your preferred item type, but exploring new groups
+- "Multi-Stan" = Exploring beyond your usual favorites
 
-This fan has cart history! Use patterns to provide insights.
+TASK: Analyze badges in THIS cart compared to their history. Give shopping advice.
 
-IMPORTANT: Always use second-person "you/your" - speak directly to the fan!
-- ✅ "You're exploring..." NOT "The user is exploring..." or "They are exploring..."
-- ✅ "your collection" NOT "their collection"
+IMPORTANT: Sound natural, not like AI!
+- Use "you/your" (talk directly to them)
+- NO dashes, NO hyphens, NO bullet points, NO corporate speak
+- Short sentences. Period. Like texting a friend.
+- Connect thoughts with periods, not dashes.
 
-"overallInsight": Analyze compared to their history:
-  - Are they sticking to patterns or trying something new?
-  - Compare to their top artist or usual item types
-  - Brief encouraging message (2 sentences max)
+"overallInsight" (MAX 2 sentences - keep it SHORT):
+  1. Count badges + explain (Top Priority? Multi-Stan? Discovery?)
+  2. Give quick actionable advice ONLY if needed
 
-"futureOpportunity": Pattern-based tip. Keep brief (1 sentence or null).
-  - Only mention if genuinely useful (e.g., "You usually shop more in X month")
-  - If abandoned items already mentioned: null
-  - Otherwise: null or brief actionable tip
+Good examples (SHORT & PUNCHY):
+- "Two Top Priority, one Multi-Stan. If budget is tight, focus on your lineup first."
+- "All Discovery badges. You're exploring outside your lineup today!"
+- "Three Top Priority items. Everything matches your lineup perfectly!"
+- "Mix of Top Priority and Multi-Stan. Your lineup items are the safe bets."
+
+Bad examples (TOO LONG):
+- "You have three Top Priority items in your cart. That's awesome because they all feature..."
+- Multiple sentences explaining each item type
 
 JSON only:
-{"overallInsight":"2 sentences max","futureOpportunity":"1 sentence or null"}`;
+{"overallInsight":"MAX 2 sentences"}`;
   }
 
   console.log("🐷 Sending prompt to AI (insights only)...");
@@ -210,14 +223,12 @@ JSON only:
   // DEBUG: Log parsed insights
   console.log('🐷 DEBUG - Parsed AI insights:');
   console.log('  overallInsight:', aiInsights.overallInsight);
-  console.log('  futureOpportunity:', aiInsights.futureOpportunity);
 
   session.destroy();
 
-  // Return only insights (items already classified by JavaScript)
+  // Return only overallInsight (futureOpportunity is generated by JavaScript)
   return {
     overallInsight: aiInsights.overallInsight,
-    futureOpportunity: aiInsights.futureOpportunity,
     priorityTip: "Focus on lineup matches first, then explore new groups at your pace"
   };
 }

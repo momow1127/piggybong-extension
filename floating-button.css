@@ -145,10 +145,24 @@
 }
 
 .piggybong-btn-text {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 2px !important;
   line-height: 1 !important;
-  white-space: nowrap !important;
+}
+
+.piggybong-btn-title {
   font-size: 15px !important;
   font-weight: 600 !important;
+  white-space: nowrap !important;
+}
+
+.piggybong-btn-subtitle {
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  opacity: 0.85 !important;
+  white-space: nowrap !important;
 }
 
 .piggybong-float-btn:hover {
@@ -276,6 +290,14 @@
   z-index: 100 !important;
 }
 
+/* Left group: back button + brand (logo + name) grouped together */
+.piggybong-header-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  flex: 1 !important;
+}
+
 .piggybong-brand {
   display: flex !important;
   align-items: center !important;
@@ -337,6 +359,36 @@
 }
 
 /* Close Button */
+/* Back button (left side of header in edit mode) */
+.piggybong-back-btn {
+  width: 32px !important;
+  height: 32px !important;
+  border: none !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 50% !important;
+  color: white !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 200 !important;
+  padding: 0 !important;
+  margin-right: 12px !important;
+}
+
+.piggybong-back-btn:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.05) !important;
+}
+
+.piggybong-back-btn svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
 .piggybong-modal-close-btn {
   width: 32px !important;
   height: 32px !important;
@@ -428,18 +480,36 @@
   text-align: center !important;
 }
 
-.piggybong-spinner {
-  width: 40px !important;
-  height: 40px !important;
-  border: 3px solid #e8e8e8 !important;
-  border-top-color: #5D2CEE !important;
-  border-radius: 50% !important;
-  animation: spin 0.8s linear infinite !important;
-  margin-bottom: 16px !important;
+/* Hide header when loading state is active */
+.piggybong-modal-body:has(.piggybong-loading) ~ * .piggybong-modal-header,
+.piggybong-modal-content:has(.piggybong-loading) > .piggybong-modal-header {
+  display: none !important;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.piggybong-spinner {
+  width: 50px !important;
+  height: 50px !important;
+  margin-bottom: 16px !important;
+  animation: float-glow 2.5s ease-in-out infinite !important;
+  filter: drop-shadow(0 0 8px rgba(93, 44, 238, 0.4)) !important;
+}
+
+.piggybong-spinner img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+
+/* Vertical floating with glow like a lightstick */
+@keyframes float-glow {
+  0%, 100% {
+    transform: translateY(0px);
+    filter: drop-shadow(0 0 8px rgba(93, 44, 238, 0.4)) brightness(1);
+  }
+  50% {
+    transform: translateY(-12px);
+    filter: drop-shadow(0 0 16px rgba(93, 44, 238, 0.8)) brightness(1.2);
+  }
 }
 
 .piggybong-loading p {
@@ -790,6 +860,33 @@
   font-weight: 400 !important;
 }
 
+/* Update Lineup Button - Green to match Smart Fan Tip theme */
+.update-lineup-btn {
+  display: inline-block !important;
+  padding: 10px 20px !important;
+  background: linear-gradient(135deg, #00897B 0%, #4CAF50 100%) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 20px !important; /* Fully rounded pill shape */
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 8px rgba(0, 137, 123, 0.25) !important;
+}
+
+.update-lineup-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 137, 123, 0.35) !important;
+  background: linear-gradient(135deg, #00796B 0%, #43A047 100%) !important;
+}
+
+.update-lineup-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 8px rgba(0, 137, 123, 0.25) !important;
+}
+
 /* Compact item badges merged into insight section */
 .piggybong-items-compact {
   display: flex !important;
@@ -1027,5 +1124,177 @@
   color: #5D4037 !important;
   line-height: 1.6 !important;
   font-weight: 500 !important;
+}
+
+/* ============================================
+   Button Styles with Hover Effects
+   ============================================ */
+
+.piggybong-primary-btn {
+  position: relative !important;
+  overflow: hidden !important;
+  transition: all 0.2s ease !important;
+}
+
+.piggybong-primary-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(93, 44, 238, 0.4) !important;
+}
+
+.piggybong-primary-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 8px rgba(93, 44, 238, 0.3) !important;
+}
+
+/* Ripple effect on click */
+.piggybong-primary-btn::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  transform: translate(-50%, -50%) !important;
+  transition: width 0.6s, height 0.6s !important;
+}
+
+.piggybong-primary-btn:active::after {
+  width: 300px !important;
+  height: 300px !important;
+}
+
+/* Secondary button hover (outline style) */
+button[id="set-preferences-btn"]:hover {
+  background: rgba(93, 44, 238, 0.05) !important;
+  border-color: #4A1FD9 !important;
+  transform: translateY(-1px) !important;
+}
+
+button[id="set-preferences-btn"]:active {
+  transform: translateY(0) !important;
+  background: rgba(93, 44, 238, 0.1) !important;
+}
+
+/* Analysis mode badges - subtle hover effect */
+span[style*="padding: 4px 12px"] {
+  transition: all 0.2s ease !important;
+}
+
+/* ============================================
+   Responsive Styles - Small Screens
+   ============================================ */
+
+/* Tablets and small laptops (< 768px width) */
+@media screen and (max-width: 768px) {
+  .piggybong-modal-content {
+    max-width: 90% !important;
+    margin: 20px !important;
+  }
+
+  .piggybong-modal-body {
+    padding: 16px !important;
+  }
+
+  .piggybong-brand-name {
+    font-size: 18px !important;
+  }
+
+  /* Stack items more tightly on small screens */
+  .piggybong-items-compact {
+    gap: 8px !important;
+  }
+
+  /* Floating button slightly smaller on narrow screens */
+  .piggybong-float-btn {
+    font-size: 14px !important;
+    padding: 12px 4px 12px 8px !important;
+  }
+
+  .piggybong-btn-icon img {
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
+
+/* Mobile-sized windows (< 480px width) */
+@media screen and (max-width: 480px) {
+  .piggybong-modal-content {
+    max-width: 95% !important;
+    margin: 10px !important;
+    border-radius: 16px !important;
+  }
+
+  .piggybong-modal-header {
+    padding: 16px !important;
+  }
+
+  .piggybong-modal-body {
+    padding: 12px !important;
+  }
+
+  /* Empty state adjustments */
+  div[style*="width: 120px; height: 120px"] {
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  div[style*="width: 120px; height: 120px"] img {
+    width: 66px !important;
+    height: 66px !important;
+  }
+
+  h3[style*="font-size: 20px"] {
+    font-size: 18px !important;
+  }
+
+  /* Button adjustments */
+  .piggybong-primary-btn,
+  button[id="set-preferences-btn"] {
+    font-size: 14px !important;
+    padding: 12px 20px !important;
+  }
+
+  /* Floating button even more compact */
+  .piggybong-float-container {
+    bottom: 80px !important;
+  }
+
+  .piggybong-btn-text {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+  }
+
+  .piggybong-btn-title {
+    font-size: 13px !important;
+  }
+
+  .piggybong-btn-subtitle {
+    font-size: 10px !important;
+  }
+}
+
+/* Very narrow screens - simplified layout (< 360px) */
+@media screen and (max-width: 360px) {
+  .piggybong-modal-content {
+    max-width: 98% !important;
+    margin: 5px !important;
+  }
+
+  /* Hide subtitle on very small screens to save space */
+  .piggybong-btn-subtitle {
+    display: none !important;
+  }
+
+  /* Single column for everything */
+  .piggybong-insight-card {
+    padding: 12px !important;
+  }
+
+  .overall-insight-content {
+    font-size: 13px !important;
+  }
 }
 

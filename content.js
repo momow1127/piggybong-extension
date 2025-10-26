@@ -4,43 +4,17 @@
 // ===========================================
 
 (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __esm = (fn, res) => function __init() {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  };
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+
   // src/content/utils/helpers.js
-  function isCartPage() {
-    const url = window.location.href.toLowerCase();
-    const pageText = document.body.innerText.toLowerCase();
-    const cartUrlPatterns = [
-      "/cart",
-      "/basket",
-      "/bag",
-      "/checkout",
-      "/order",
-      "/purchase",
-      "/payment",
-      "step=1",
-      "step=2",
-      "step=3",
-      "orderform",
-      "shoppingcart"
-    ];
-    const cartTextIndicators = [
-      "shopping cart",
-      "shopping bag",
-      "my cart",
-      "your cart",
-      "checkout",
-      "items in cart",
-      "proceed to checkout",
-      "order summary",
-      "cart total",
-      "subtotal",
-      "remove from cart",
-      "update cart",
-      "cart is empty"
-    ];
-    const hasCartUrl = cartUrlPatterns.some((pattern) => url.includes(pattern));
-    const hasCartContent = cartTextIndicators.some((text) => pageText.includes(text));
-    return hasCartUrl || hasCartContent;
-  }
   function getCartItemCount() {
     const pageText = document.body.innerText.toLowerCase();
     const itemCountPatterns = [
@@ -83,16 +57,16 @@
       loadingDiv.remove();
     }
     const currentUrl = window.location.href;
-    const isCartPage2 = currentUrl.includes("/cart");
+    const isCartPage = currentUrl.includes("/cart");
     modalBody.innerHTML = `
     <div class="piggybong-result">
       <div style="text-align: center; padding: 20px;">
         <div style="font-size: 48px; margin-bottom: 16px;">\u{1F6D2}</div>
         <h3 style="font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 0 0 12px 0;">
-          ${isCartPage2 ? "Your cart looks empty!" : "No cart items found"}
+          ${isCartPage ? "Your cart looks empty!" : "No cart items found"}
         </h3>
         <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0 0 16px 0;">
-          ${isCartPage2 ? "Add some K-pop items to your cart, then click me to see your priority breakdown! \u{1F49C}" : "Go to your shopping cart page and add some items, then I can help you prioritize! \u{1F6CD}\uFE0F"}
+          ${isCartPage ? "Add some K-pop items to your cart, then click me to see your priority breakdown! \u{1F49C}" : "Go to your shopping cart page and add some items, then I can help you prioritize! \u{1F6CD}\uFE0F"}
         </p>
         <div style="background: linear-gradient(135deg, #F3E5FF 0%, #E8D5FF 100%); padding: 16px; border-radius: 12px; border: 1px solid rgba(93, 44, 238, 0.2); text-align: left;">
           <p style="font-size: 13px; color: #5D2CEE; margin: 0 0 8px 0; font-weight: 700;">\u{1F4A1} How to use Piggy Bong:</p>
@@ -106,434 +80,270 @@
     </div>
   `;
   }
-
-  // src/content/ui/floatingButton.js
-  var floatingContainer = null;
-  var isButtonCreated = false;
-  function createFloatingButton(showPiggyBongModalCallback) {
-    if (isButtonCreated) return;
-    console.log("\u{1F437} Creating Piggy Bong floating button...");
-    floatingContainer = document.createElement("div");
-    floatingContainer.id = "piggybong-floating-container";
-    floatingContainer.className = "piggybong-float-container";
-    const floatingBtn = document.createElement("button");
-    floatingBtn.id = "piggybong-floating-btn";
-    floatingBtn.className = "piggybong-float-btn";
-    floatingBtn.setAttribute("aria-label", "Piggy Bong Priority Check");
-    const logoUrl = chrome.runtime.getURL("piggybong.png");
-    floatingBtn.innerHTML = `
-    <div class="piggybong-btn-icon">
-      <img src="${logoUrl}" alt="Piggy Bong" />
-    </div>
-    <span class="piggybong-btn-text">Should I Buy This?</span>
-    <div class="piggybong-drag-handle">
-      <div class="drag-dots"></div>
-    </div>
-  `;
-    const closeBtn = document.createElement("button");
-    closeBtn.className = "piggybong-close-btn";
-    closeBtn.innerHTML = "\xD7";
-    closeBtn.setAttribute("aria-label", "Close Piggy Bong");
-    closeBtn.title = "Dismiss";
-    floatingContainer.appendChild(floatingBtn);
-    floatingContainer.appendChild(closeBtn);
-    document.body.appendChild(floatingContainer);
-    const hostname = window.location.hostname;
-    const savedPosition = localStorage.getItem(`piggybong-position-${hostname}`);
-    if (savedPosition) {
-      const pos = JSON.parse(savedPosition);
-      floatingContainer.style.left = pos.left;
-      floatingContainer.style.top = pos.top;
-      floatingContainer.style.right = pos.right;
+  var init_helpers = __esm({
+    "src/content/utils/helpers.js"() {
     }
-    let isDragging = false;
-    let dragStarted = false;
-    let startX, startY, initialLeft, initialTop;
-    floatingContainer.addEventListener("mousedown", (e) => {
-      if (!e.target.closest(".piggybong-drag-handle")) return;
-      if (e.target.closest(".piggybong-close-btn")) return;
-      isDragging = true;
-      dragStarted = false;
-      startX = e.clientX;
-      startY = e.clientY;
-      const rect = floatingContainer.getBoundingClientRect();
-      initialLeft = rect.left;
-      initialTop = rect.top;
-      floatingContainer.style.transition = "none";
-      floatingContainer.classList.add("dragging");
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    document.addEventListener("mousemove", (e) => {
-      if (!isDragging) return;
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-      if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
-        dragStarted = true;
-      }
-      const newLeft = initialLeft + deltaX;
-      const newTop = initialTop + deltaY;
-      floatingContainer.style.left = newLeft + "px";
-      floatingContainer.style.top = newTop + "px";
-      floatingContainer.style.right = "auto";
-    });
-    document.addEventListener("mouseup", (e) => {
-      if (!isDragging) return;
-      isDragging = false;
-      floatingContainer.classList.remove("dragging");
-      const rect = floatingContainer.getBoundingClientRect();
-      const windowWidth = window.innerWidth;
-      const centerX = rect.left + rect.width / 2;
-      floatingContainer.style.transition = "left 0.3s ease, right 0.3s ease";
-      if (centerX < windowWidth / 2) {
-        floatingContainer.style.left = "20px";
-        floatingContainer.style.right = "auto";
-      } else {
-        floatingContainer.style.right = "20px";
-        floatingContainer.style.left = "auto";
-      }
-      floatingContainer.style.top = rect.top + "px";
-      setTimeout(() => {
-        const finalRect = floatingContainer.getBoundingClientRect();
-        const position = {
-          left: floatingContainer.style.left,
-          right: floatingContainer.style.right,
-          top: floatingContainer.style.top
-        };
-        localStorage.setItem(`piggybong-position-${hostname}`, JSON.stringify(position));
-      }, 300);
-    });
-    closeBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      floatingContainer.style.opacity = "0";
-      floatingContainer.style.transform = "scale(0.8)";
-      setTimeout(() => {
-        floatingContainer.remove();
-      }, 200);
-    });
-    floatingBtn.addEventListener("click", async (e) => {
-      if (e.target.closest(".piggybong-drag-handle")) return;
-      if (e.target.closest(".piggybong-close-btn")) return;
-      if (dragStarted) {
-        dragStarted = false;
-        return;
-      }
-      console.log("Piggy Bong button clicked!");
-      const pageText = document.body.innerText || "";
-      const pageUrl = window.location.href;
-      showPiggyBongModalCallback(pageText, pageUrl);
-    });
-    isButtonCreated = true;
-    console.log("\u{1F437} Piggy Bong: Floating button created successfully!");
-  }
-  function updateButtonState() {
-    if (!floatingContainer) return;
-    const itemCount = getCartItemCount();
-    const floatingBtn = floatingContainer.querySelector("#piggybong-floating-btn");
-    const btnText = floatingBtn?.querySelector(".piggybong-btn-text");
-    if (btnText) btnText.textContent = "Should I Buy This?";
-    if (itemCount === 0) {
-      console.log("\u{1F437} Cart is empty - button will show empty cart message");
-    } else {
-      console.log(`\u{1F437} Cart has ${itemCount === -1 ? "items (unknown count)" : itemCount + " items"} - button ready for analysis`);
-    }
-  }
-  function handleEmptyCartClick(e) {
-    const itemCount = getCartItemCount();
-    if (itemCount === 0) {
-      e.preventDefault();
-      e.stopPropagation();
-      const modal = document.createElement("div");
-      modal.className = "piggybong-modal show";
-      modal.innerHTML = `
-      <div class="piggybong-modal-overlay"></div>
-      <div class="piggybong-modal-content" style="max-width: 380px;">
-        <div class="piggybong-modal-header">
-          <div class="piggybong-brand">
-            <img src="${chrome.runtime.getURL("piggybong.png")}" alt="Piggy Bong" class="piggybong-header-logo">
-            <span class="piggybong-brand-name">Piggy Bong</span>
-          </div>
-          <button class="piggybong-modal-close-btn" aria-label="Close">\xD7</button>
-        </div>
-        <div class="piggybong-modal-body">
-          <div style="text-align: center; padding: 16px;">
-            <div style="font-size: 48px; margin-bottom: 16px;">\u{1F6D2}</div>
-            <h3 style="font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 0 0 12px 0;">Nothing in your cart yet!</h3>
-            <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0;">
-              Add some K-pop items and I'll be here to help you decide before checkout
-            </p>
-          </div>
-        </div>
-      </div>
-    `;
-      document.body.appendChild(modal);
-      const closeBtn = modal.querySelector(".piggybong-modal-close-btn");
-      const overlay = modal.querySelector(".piggybong-modal-overlay");
-      const closeModal = (e2) => {
-        if (e2) e2.stopPropagation();
-        modal.classList.add("closing");
-        setTimeout(() => modal.remove(), 300);
-      };
-      closeBtn.addEventListener("click", closeModal);
-      overlay.addEventListener("click", closeModal);
-      return false;
-    }
-  }
+  });
 
   // src/content/utils/personalization.js
-  var PersonalizationHelper = {
-    // Legacy single bias support (kept for backward compatibility)
-    getBias() {
-      return localStorage.getItem("piggyBias") || null;
-    },
-    setBias(bias) {
-      if (bias && bias.trim()) {
-        localStorage.setItem("piggyBias", bias.trim());
-      }
-    },
-    // New multi-group lineup support
-    getLineup() {
-      const stored = localStorage.getItem("piggyLineup");
-      return stored ? JSON.parse(stored) : [];
-    },
-    setLineup(lineup) {
-      if (Array.isArray(lineup) && lineup.length > 0) {
-        localStorage.setItem("piggyLineup", JSON.stringify(lineup));
-      }
-    },
-    // Priority item support
-    getPriority() {
-      const stored = localStorage.getItem("piggyPriority");
-      return stored ? JSON.parse(stored) : null;
-    },
-    setPriority(priority) {
-      if (priority && (priority.type || priority.types)) {
-        console.log("\u{1F50D} PersonalizationHelper.setPriority() saving:", priority);
-        localStorage.setItem("piggyPriority", JSON.stringify(priority));
-        console.log("\u{1F50D} Saved to localStorage. Reading back:", localStorage.getItem("piggyPriority"));
-      } else {
-        console.warn("\u{1F50D} setPriority() called but priority object invalid:", priority);
-      }
-    },
-    // Legacy goal support
-    getCollectionGoal() {
-      return localStorage.getItem("piggyGoal") || null;
-    },
-    setCollectionGoal(goal) {
-      if (goal && goal.trim()) {
-        localStorage.setItem("piggyGoal", goal.trim());
-      }
-    },
-    hasPersonalization() {
-      return this.getLineup().length > 0 || this.getBias() !== null || this.getPriority() !== null;
-    },
-    clearPersonalization() {
-      localStorage.removeItem("piggyBias");
-      localStorage.removeItem("piggyGoal");
-      localStorage.removeItem("piggyLineup");
-      localStorage.removeItem("piggyPriority");
-    },
-    getPersonalizationContext() {
-      const lineup = this.getLineup();
-      const priority = this.getPriority();
-      const legacyBias = this.getBias();
-      if (lineup.length === 0 && !legacyBias && !priority) return "";
-      let context = "\nPERSONALIZATION CONTEXT:\n";
-      if (lineup.length > 0) {
-        context += `User's lineup: ${lineup.join(", ")}
+  var PersonalizationHelper, CartHistoryHelper;
+  var init_personalization = __esm({
+    "src/content/utils/personalization.js"() {
+      PersonalizationHelper = {
+        // Legacy single bias support (kept for backward compatibility)
+        getBias() {
+          return localStorage.getItem("piggyBias") || null;
+        },
+        setBias(bias) {
+          if (bias && bias.trim()) {
+            localStorage.setItem("piggyBias", bias.trim());
+          }
+        },
+        // New multi-group lineup support
+        getLineup() {
+          const stored = localStorage.getItem("piggyLineup");
+          return stored ? JSON.parse(stored) : [];
+        },
+        setLineup(lineup) {
+          if (Array.isArray(lineup) && lineup.length > 0) {
+            localStorage.setItem("piggyLineup", JSON.stringify(lineup));
+          }
+        },
+        // Priority item support
+        getPriority() {
+          const stored = localStorage.getItem("piggyPriority");
+          return stored ? JSON.parse(stored) : null;
+        },
+        setPriority(priority) {
+          if (priority && (priority.type || priority.types)) {
+            console.log("\u{1F50D} PersonalizationHelper.setPriority() saving:", priority);
+            localStorage.setItem("piggyPriority", JSON.stringify(priority));
+            console.log("\u{1F50D} Saved to localStorage. Reading back:", localStorage.getItem("piggyPriority"));
+          } else {
+            console.warn("\u{1F50D} setPriority() called but priority object invalid:", priority);
+          }
+        },
+        // Legacy goal support
+        getCollectionGoal() {
+          return localStorage.getItem("piggyGoal") || null;
+        },
+        setCollectionGoal(goal) {
+          if (goal && goal.trim()) {
+            localStorage.setItem("piggyGoal", goal.trim());
+          }
+        },
+        hasPersonalization() {
+          return this.getLineup().length > 0 || this.getBias() !== null || this.getPriority() !== null;
+        },
+        clearPersonalization() {
+          localStorage.removeItem("piggyBias");
+          localStorage.removeItem("piggyGoal");
+          localStorage.removeItem("piggyLineup");
+          localStorage.removeItem("piggyPriority");
+        },
+        getPersonalizationContext() {
+          const lineup = this.getLineup();
+          const priority = this.getPriority();
+          const legacyBias = this.getBias();
+          if (lineup.length === 0 && !legacyBias && !priority) return "";
+          let context = "\nPERSONALIZATION CONTEXT:\n";
+          if (lineup.length > 0) {
+            context += `User's lineup: ${lineup.join(", ")}
 `;
-      } else if (legacyBias) {
-        context += `User's bias: ${legacyBias}
+          } else if (legacyBias) {
+            context += `User's bias: ${legacyBias}
 `;
-      }
-      if (priority) {
-        context += `Top priority: ${priority.name} (${priority.type})
+          }
+          if (priority) {
+            context += `Top priority: ${priority.name} (${priority.type})
 `;
-      }
-      return context;
-    }
-  };
-  var CartHistoryHelper = {
-    // Extract artist/group name from item name
-    extractArtist(itemName) {
-      const lineup = PersonalizationHelper.getLineup();
-      for (const group of lineup) {
-        if (itemName.toLowerCase().includes(group.toLowerCase())) {
-          return group;
+          }
+          return context;
         }
-      }
-      const commonGroups = [
-        "NewJeans",
-        "BTS",
-        "BLACKPINK",
-        "TWICE",
-        "Stray Kids",
-        "aespa",
-        "SEVENTEEN",
-        "TXT",
-        "ENHYPEN",
-        "IVE",
-        "LE SSERAFIM",
-        "ITZY",
-        "Red Velvet",
-        "NCT",
-        "EXO",
-        "BIGBANG",
-        "GOT7",
-        "ATEEZ"
-      ];
-      for (const group of commonGroups) {
-        if (itemName.toLowerCase().includes(group.toLowerCase())) {
-          return group;
-        }
-      }
-      return "Unknown";
-    },
-    // Extract item type from item name
-    extractType(itemName) {
-      const lowerName = itemName.toLowerCase();
-      if (lowerName.includes("photocard") || lowerName.includes("pc")) return "photocard";
-      if (lowerName.includes("album")) return "album";
-      if (lowerName.includes("lightstick") || lowerName.includes("light stick")) return "lightstick";
-      if (lowerName.includes("poster")) return "poster";
-      if (lowerName.includes("season") && lowerName.includes("greeting")) return "season's greetings";
-      if (lowerName.includes("dvd") || lowerName.includes("blu-ray")) return "dvd/blu-ray";
-      if (lowerName.includes("merchandise") || lowerName.includes("merch")) return "merchandise";
-      return "other";
-    },
-    // Get all cart history
-    getCartHistory() {
-      const stored = localStorage.getItem("piggyCartHistory");
-      return stored ? JSON.parse(stored) : [];
-    },
-    // Save a cart snapshot
-    saveCartSnapshot(items, total, timestamp = Date.now()) {
-      const history = this.getCartHistory();
-      const snapshot = {
-        id: timestamp,
-        date: new Date(timestamp).toISOString(),
-        items: items.map((item) => ({
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity || 1,
-          artist: this.extractArtist(item.name),
-          type: this.extractType(item.name)
-        })),
-        total,
-        purchased: false,
-        // We assume not purchased initially
-        lineup: PersonalizationHelper.getLineup(),
-        priorityTypes: PersonalizationHelper.getPriority()?.types || []
       };
-      const recentSnapshot = history[history.length - 1];
-      if (recentSnapshot && timestamp - recentSnapshot.id < 3e5) {
-        const sameItems = JSON.stringify(recentSnapshot.items) === JSON.stringify(snapshot.items);
-        if (sameItems) {
-          console.log("\u{1F4CA} Skipping duplicate cart snapshot");
-          return;
+      CartHistoryHelper = {
+        // Extract artist/group name from item name
+        extractArtist(itemName) {
+          const lineup = PersonalizationHelper.getLineup();
+          for (const group of lineup) {
+            if (itemName.toLowerCase().includes(group.toLowerCase())) {
+              return group;
+            }
+          }
+          const commonGroups = [
+            "NewJeans",
+            "BTS",
+            "BLACKPINK",
+            "TWICE",
+            "Stray Kids",
+            "aespa",
+            "SEVENTEEN",
+            "TXT",
+            "ENHYPEN",
+            "IVE",
+            "LE SSERAFIM",
+            "ITZY",
+            "Red Velvet",
+            "NCT",
+            "EXO",
+            "BIGBANG",
+            "GOT7",
+            "ATEEZ"
+          ];
+          for (const group of commonGroups) {
+            if (itemName.toLowerCase().includes(group.toLowerCase())) {
+              return group;
+            }
+          }
+          return "Unknown";
+        },
+        // Extract item type from item name
+        extractType(itemName) {
+          const lowerName = itemName.toLowerCase();
+          if (lowerName.includes("photocard") || lowerName.includes("pc")) return "photocard";
+          if (lowerName.includes("album")) return "album";
+          if (lowerName.includes("lightstick") || lowerName.includes("light stick")) return "lightstick";
+          if (lowerName.includes("poster")) return "poster";
+          if (lowerName.includes("season") && lowerName.includes("greeting")) return "season's greetings";
+          if (lowerName.includes("dvd") || lowerName.includes("blu-ray")) return "dvd/blu-ray";
+          if (lowerName.includes("merchandise") || lowerName.includes("merch")) return "merchandise";
+          return "other";
+        },
+        // Get all cart history
+        getCartHistory() {
+          const stored = localStorage.getItem("piggyCartHistory");
+          return stored ? JSON.parse(stored) : [];
+        },
+        // Save a cart snapshot
+        saveCartSnapshot(items, total, timestamp = Date.now()) {
+          const history = this.getCartHistory();
+          const snapshot = {
+            id: timestamp,
+            date: new Date(timestamp).toISOString(),
+            items: items.map((item) => ({
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity || 1,
+              artist: this.extractArtist(item.name),
+              type: this.extractType(item.name)
+            })),
+            total,
+            purchased: false,
+            // We assume not purchased initially
+            lineup: PersonalizationHelper.getLineup(),
+            priorityTypes: PersonalizationHelper.getPriority()?.types || []
+          };
+          const recentSnapshot = history[history.length - 1];
+          if (recentSnapshot && timestamp - recentSnapshot.id < 3e5) {
+            const sameItems = JSON.stringify(recentSnapshot.items) === JSON.stringify(snapshot.items);
+            if (sameItems) {
+              console.log("\u{1F4CA} Skipping duplicate cart snapshot");
+              return;
+            }
+          }
+          history.push(snapshot);
+          if (history.length > 50) {
+            history.shift();
+          }
+          localStorage.setItem("piggyCartHistory", JSON.stringify(history));
+          console.log("\u{1F4CA} Saved cart snapshot:", snapshot);
+        },
+        // Get artist frequency across all carts
+        getArtistFrequency(history) {
+          const frequency = {};
+          history.forEach((cart) => {
+            cart.items.forEach((item) => {
+              const artist = item.artist;
+              if (artist !== "Unknown") {
+                frequency[artist] = (frequency[artist] || 0) + 1;
+              }
+            });
+          });
+          return frequency;
+        },
+        // Get item type frequency
+        getTypeFrequency(history) {
+          const frequency = {};
+          history.forEach((cart) => {
+            cart.items.forEach((item) => {
+              const type = item.type;
+              frequency[type] = (frequency[type] || 0) + 1;
+            });
+          });
+          return frequency;
+        },
+        // Detect seasonal patterns (which months user shops most)
+        getSeasonalPatterns(history) {
+          const monthCounts = {};
+          history.forEach((cart) => {
+            const date = new Date(cart.date);
+            const monthName = date.toLocaleString("en-US", { month: "long" });
+            monthCounts[monthName] = (monthCounts[monthName] || 0) + 1;
+          });
+          return monthCounts;
+        },
+        // Get abandoned items (added 2+ times but never purchased)
+        getAbandonedItems(history) {
+          const itemCounts = {};
+          history.forEach((cart) => {
+            cart.items.forEach((item) => {
+              const key = item.name;
+              if (!itemCounts[key]) {
+                itemCounts[key] = { count: 0, purchased: false, artist: item.artist, type: item.type };
+              }
+              itemCounts[key].count++;
+              if (cart.purchased) {
+                itemCounts[key].purchased = true;
+              }
+            });
+          });
+          return Object.entries(itemCounts).filter(([name, data]) => data.count >= 2 && !data.purchased).map(([name, data]) => ({
+            name,
+            timesAdded: data.count,
+            artist: data.artist,
+            type: data.type
+          }));
+        },
+        // Calculate average cart value
+        getAverageCartValue(history) {
+          if (history.length === 0) return 0;
+          const total = history.reduce((sum, cart) => sum + (cart.total || 0), 0);
+          return total / history.length;
+        },
+        // Detect lineup mismatches (stated vs actual collecting behavior)
+        getLineupMismatch(history) {
+          const currentLineup = PersonalizationHelper.getLineup();
+          if (currentLineup.length === 0) return null;
+          const artistFreq = this.getArtistFrequency(history);
+          const topArtists = Object.entries(artistFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([artist]) => artist);
+          const notInLineup = topArtists.filter(
+            (artist) => !currentLineup.some(
+              (lineupGroup) => lineupGroup.toLowerCase() === artist.toLowerCase()
+            )
+          );
+          return notInLineup.length > 0 ? notInLineup : null;
+        },
+        // Analyze all patterns
+        analyzePatterns() {
+          const history = this.getCartHistory();
+          if (history.length < 2) {
+            return null;
+          }
+          return {
+            totalCarts: history.length,
+            artistFrequency: this.getArtistFrequency(history),
+            typeFrequency: this.getTypeFrequency(history),
+            seasonalPatterns: this.getSeasonalPatterns(history),
+            abandonedItems: this.getAbandonedItems(history),
+            averageCartValue: this.getAverageCartValue(history),
+            lineupMismatch: this.getLineupMismatch(history),
+            oldestCart: new Date(history[0].date).toLocaleDateString(),
+            newestCart: new Date(history[history.length - 1].date).toLocaleDateString()
+          };
         }
-      }
-      history.push(snapshot);
-      if (history.length > 50) {
-        history.shift();
-      }
-      localStorage.setItem("piggyCartHistory", JSON.stringify(history));
-      console.log("\u{1F4CA} Saved cart snapshot:", snapshot);
-    },
-    // Get artist frequency across all carts
-    getArtistFrequency(history) {
-      const frequency = {};
-      history.forEach((cart) => {
-        cart.items.forEach((item) => {
-          const artist = item.artist;
-          if (artist !== "Unknown") {
-            frequency[artist] = (frequency[artist] || 0) + 1;
-          }
-        });
-      });
-      return frequency;
-    },
-    // Get item type frequency
-    getTypeFrequency(history) {
-      const frequency = {};
-      history.forEach((cart) => {
-        cart.items.forEach((item) => {
-          const type = item.type;
-          frequency[type] = (frequency[type] || 0) + 1;
-        });
-      });
-      return frequency;
-    },
-    // Detect seasonal patterns (which months user shops most)
-    getSeasonalPatterns(history) {
-      const monthCounts = {};
-      history.forEach((cart) => {
-        const date = new Date(cart.date);
-        const monthName = date.toLocaleString("en-US", { month: "long" });
-        monthCounts[monthName] = (monthCounts[monthName] || 0) + 1;
-      });
-      return monthCounts;
-    },
-    // Get abandoned items (added 2+ times but never purchased)
-    getAbandonedItems(history) {
-      const itemCounts = {};
-      history.forEach((cart) => {
-        cart.items.forEach((item) => {
-          const key = item.name;
-          if (!itemCounts[key]) {
-            itemCounts[key] = { count: 0, purchased: false, artist: item.artist, type: item.type };
-          }
-          itemCounts[key].count++;
-          if (cart.purchased) {
-            itemCounts[key].purchased = true;
-          }
-        });
-      });
-      return Object.entries(itemCounts).filter(([name, data]) => data.count >= 2 && !data.purchased).map(([name, data]) => ({
-        name,
-        timesAdded: data.count,
-        artist: data.artist,
-        type: data.type
-      }));
-    },
-    // Calculate average cart value
-    getAverageCartValue(history) {
-      if (history.length === 0) return 0;
-      const total = history.reduce((sum, cart) => sum + (cart.total || 0), 0);
-      return total / history.length;
-    },
-    // Detect lineup mismatches (stated vs actual collecting behavior)
-    getLineupMismatch(history) {
-      const currentLineup = PersonalizationHelper.getLineup();
-      if (currentLineup.length === 0) return null;
-      const artistFreq = this.getArtistFrequency(history);
-      const topArtists = Object.entries(artistFreq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([artist]) => artist);
-      const notInLineup = topArtists.filter(
-        (artist) => !currentLineup.some(
-          (lineupGroup) => lineupGroup.toLowerCase() === artist.toLowerCase()
-        )
-      );
-      return notInLineup.length > 0 ? notInLineup : null;
-    },
-    // Analyze all patterns
-    analyzePatterns() {
-      const history = this.getCartHistory();
-      if (history.length < 2) {
-        return null;
-      }
-      return {
-        totalCarts: history.length,
-        artistFrequency: this.getArtistFrequency(history),
-        typeFrequency: this.getTypeFrequency(history),
-        seasonalPatterns: this.getSeasonalPatterns(history),
-        abandonedItems: this.getAbandonedItems(history),
-        averageCartValue: this.getAverageCartValue(history),
-        lineupMismatch: this.getLineupMismatch(history),
-        oldestCart: new Date(history[0].date).toLocaleDateString(),
-        newestCart: new Date(history[history.length - 1].date).toLocaleDateString()
       };
     }
-  };
+  });
 
   // src/content/extractors/ktown4u.js
   function extractKtown4uCart() {
@@ -647,6 +457,10 @@
     console.log("\u{1F437} Ktown4u extraction returning null - will use fallback");
     return null;
   }
+  var init_ktown4u = __esm({
+    "src/content/extractors/ktown4u.js"() {
+    }
+  });
 
   // src/content/extractors/weverse.js
   function extractWeverseCart() {
@@ -681,6 +495,10 @@
     }
     return null;
   }
+  var init_weverse = __esm({
+    "src/content/extractors/weverse.js"() {
+    }
+  });
 
   // src/content/extractors/generic.js
   function extractGenericCart(pageText) {
@@ -732,6 +550,10 @@
     console.log("\u{1F437} No cart items found - returning null");
     return null;
   }
+  var init_generic = __esm({
+    "src/content/extractors/generic.js"() {
+    }
+  });
 
   // src/content/extractors/index.js
   function extractProductInfo(pageText) {
@@ -758,6 +580,13 @@
     console.log("\u{1F437} Generic extraction returned:", result);
     return result;
   }
+  var init_extractors = __esm({
+    "src/content/extractors/index.js"() {
+      init_ktown4u();
+      init_weverse();
+      init_generic();
+    }
+  });
 
   // src/content/ai/analyzeWithAI.js
   function cleanText(t) {
@@ -776,7 +605,23 @@
     );
     safe.priorityTip = ai.priorityTip || "Focus on lineup matches first, then explore new groups at your pace";
     safe.patternInsight = ai.patternInsight ? cleanText(ai.patternInsight) : null;
-    safe.futureOpportunity = ai.futureOpportunity ? cleanText(ai.futureOpportunity) : null;
+    if (ai.futureOpportunity) {
+      if (typeof ai.futureOpportunity === "object") {
+        safe.futureOpportunity = {
+          text: cleanText(ai.futureOpportunity.text),
+          suggestPreferenceUpdate: ai.futureOpportunity.suggestPreferenceUpdate || false,
+          artistName: ai.futureOpportunity.artistName || null
+        };
+      } else {
+        safe.futureOpportunity = {
+          text: cleanText(ai.futureOpportunity),
+          suggestPreferenceUpdate: false,
+          artistName: null
+        };
+      }
+    } else {
+      safe.futureOpportunity = null;
+    }
     return safe;
   }
   function analyzeItemsWithJavaScript(items, lineup, priorityTypes) {
@@ -844,6 +689,8 @@
     console.log("\u{1F437} Using hybrid approach: JS for badges, AI for insights");
     const classifiedItems = analyzeItemsWithJavaScript(productInfo.items, userGroups, priorityTypes);
     console.log("\u2705 JavaScript badge classification:", classifiedItems.map((i) => `${i.name.substring(0, 30)}... \u2192 ${i.priority}`));
+    classifiedItems.sort((a, b) => b.score - a.score);
+    console.log("\u2705 Items sorted by priority:", classifiedItems.map((i) => `${i.priority} (${i.score}): ${i.name.substring(0, 30)}...`));
     try {
       console.log("\u{1F437} Requesting AI insights (overallInsight, futureOpportunity)...");
       const response = await chrome.runtime.sendMessage({
@@ -860,11 +707,15 @@
       });
       if (response.success && response.result) {
         console.log("\u{1F437} \u2705 AI insights received from background");
+        const futureOpportunity = generateSmartFanTip(patterns, productInfo.items, userGroups);
+        console.log("\u{1F437} Smart Fan Tip generated:", futureOpportunity);
         return validateAIResult({
           items: classifiedItems,
-          // ✅ Use JavaScript-classified badges (100% accurate)
+          // ✅ JavaScript-classified badges (100% accurate)
           overallInsight: response.result.overallInsight,
-          futureOpportunity: response.result.futureOpportunity,
+          // ✅ AI-generated insight (creative)
+          futureOpportunity,
+          // ✅ JavaScript-generated tip (factual, no hallucination)
           priorityTip: response.result.priorityTip || "Focus on lineup matches first, then explore new groups at your pace",
           patternInsight: response.result.patternInsight || null
         });
@@ -879,6 +730,63 @@
       return useJavaScriptFallback(productInfo, userGroups, priorityTypes, patterns);
     }
   }
+  function generateSmartFanTip(patterns, currentItems, userGroups) {
+    if (!patterns || patterns.totalCarts < 2) {
+      return {
+        text: "This is your first cart! Keep shopping and I'll learn your patterns. I'll spot which artists you love and when you shop most.",
+        suggestPreferenceUpdate: false,
+        artistName: null
+      };
+    }
+    const userGroupsLower = userGroups.map((g) => g.toLowerCase());
+    const currentItemNames = currentItems.map((item) => item.name.toLowerCase());
+    const abandonedInCart = patterns.abandonedItems.filter(
+      (abandoned) => currentItemNames.some((current) => current.includes(abandoned.name.toLowerCase()))
+    );
+    if (abandonedInCart.length > 0) {
+      const item = abandonedInCart[0];
+      const artistMatch = item.name.match(/^([A-Za-z\s&]+)/);
+      const itemLabel = artistMatch ? artistMatch[1].trim() : "this";
+      const artistNotInLineup = itemLabel !== "this" && !userGroupsLower.some(
+        (group) => itemLabel.toLowerCase().includes(group) || group.includes(itemLabel.toLowerCase())
+      );
+      return {
+        text: artistNotInLineup && item.timesAdded >= 3 ? `${itemLabel} added ${item.timesAdded} times but not in your lineup. Want to add them?` : `${itemLabel} added ${item.timesAdded} times. Just get it!`,
+        suggestPreferenceUpdate: artistNotInLineup && item.timesAdded >= 3,
+        artistName: artistNotInLineup ? itemLabel : null
+      };
+    }
+    const peakMonth = Object.entries(patterns.seasonalPatterns).sort((a, b) => b[1] - a[1])[0];
+    const currentMonth = (/* @__PURE__ */ new Date()).toLocaleString("en-US", { month: "long" });
+    if (peakMonth && peakMonth[0] === currentMonth && patterns.totalCarts >= 3) {
+      return {
+        text: `${currentMonth} is your peak shopping month. You're on schedule!`,
+        suggestPreferenceUpdate: false,
+        artistName: null
+      };
+    }
+    const topArtist = Object.entries(patterns.artistFrequency).sort((a, b) => b[1] - a[1])[0];
+    if (topArtist && topArtist[1] >= 3) {
+      const percentage = Math.round(topArtist[1] / patterns.totalCarts * 100);
+      const artistNotInLineup = !userGroupsLower.some(
+        (group) => topArtist[0].toLowerCase().includes(group) || group.includes(topArtist[0].toLowerCase())
+      );
+      return {
+        text: artistNotInLineup ? `${topArtist[0]} shows up in ${percentage}% of your carts but not in your lineup. Want to add them?` : `${topArtist[0]} shows up in ${percentage}% of your carts. Dedicated!`,
+        suggestPreferenceUpdate: artistNotInLineup,
+        artistName: artistNotInLineup ? topArtist[0] : null
+      };
+    }
+    const topType = Object.entries(patterns.typeFrequency).sort((a, b) => b[1] - a[1])[0];
+    if (topType && topType[1] >= 3) {
+      return {
+        text: `You collect ${topType[0]}s!`,
+        suggestPreferenceUpdate: false,
+        artistName: null
+      };
+    }
+    return null;
+  }
   function useJavaScriptFallback(productInfo, userGroups, priorityTypes, patterns) {
     const analyzedItems = analyzeItemsWithJavaScript(
       productInfo.items,
@@ -887,37 +795,28 @@
     );
     const lineupText = userGroups.join(", ");
     const typesText = priorityTypes.length > 0 ? ` and ${priorityTypes.join(", ")} items` : "";
-    let patternInsight = null;
-    let futureOpportunity = null;
-    if (patterns) {
-      const currentItemNames = productInfo.items.map((item) => item.name.toLowerCase());
-      const abandonedInCart = patterns.abandonedItems.filter(
-        (abandoned) => currentItemNames.some((current) => current.includes(abandoned.name.toLowerCase()))
-      );
-      if (abandonedInCart.length > 0) {
-        patternInsight = `\u{1F4AD} You've added "${abandonedInCart[0].name}" ${abandonedInCart[0].timesAdded} times before but never purchased. Trust your instincts!`;
-      }
-      if (patterns.lineupMismatch && patterns.lineupMismatch.length > 0) {
-        const topMismatch = patterns.lineupMismatch[0];
-        const freq = patterns.artistFrequency[topMismatch];
-        patternInsight = patternInsight || `\u{1F4CA} Your cart history shows ${freq}x ${topMismatch} items, but they're not in your lineup. Consider adding them!`;
-      }
-      const currentMonth = (/* @__PURE__ */ new Date()).toLocaleString("en-US", { month: "long" });
-      const peakMonths = Object.entries(patterns.seasonalPatterns).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([month]) => month);
-      if (peakMonths.length > 0 && !peakMonths.includes(currentMonth)) {
-        futureOpportunity = `\u{1F3AF} Your collecting pattern peaks in ${peakMonths.join(" and ")}. Save your budget for then when ${lineupText} typically release new content!`;
-      }
-    }
+    const futureOpportunity = generateSmartFanTip(patterns, productInfo.items, userGroups);
     return validateAIResult({
       items: analyzedItems,
       overallInsight: `Your cart has ${analyzedItems.length} items! Focus on ${lineupText}${typesText} to build your collection.`,
       priorityTip: `Start with ${lineupText} items${priorityTypes.length > 0 ? ` and ${priorityTypes.join(", ")} types` : ""} first.`,
-      patternInsight,
+      patternInsight: null,
       futureOpportunity
     });
   }
+  var init_analyzeWithAI = __esm({
+    "src/content/ai/analyzeWithAI.js"() {
+      init_personalization();
+    }
+  });
 
   // src/content/ui/modal.js
+  var modal_exports = {};
+  __export(modal_exports, {
+    showAnalysisModal: () => showAnalysisModal,
+    showOnboardingModal: () => showOnboardingModal,
+    showPiggyBongModal: () => showPiggyBongModal
+  });
   function showOnboardingModal(callback) {
     const modal = document.createElement("div");
     modal.id = "piggybong-onboarding-modal";
@@ -931,9 +830,18 @@
     <div class="piggybong-modal-overlay" aria-hidden="true"></div>
     <div class="piggybong-modal-content" style="max-width: 450px;">
       <div class="piggybong-modal-header">
-        <div class="piggybong-brand">
-          <img src="${logoUrl}" alt="Piggy Bong" class="piggybong-header-logo">
-          <span id="piggybong-onboarding-title" class="piggybong-brand-name">${isEditing ? "Edit Preferences" : "Welcome to Piggy Bong!"}</span>
+        <div class="piggybong-header-left">
+          ${isEditing ? `
+          <button class="piggybong-back-btn" aria-label="Back" title="Back to analysis">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          ` : ""}
+          <div class="piggybong-brand">
+            <img src="${logoUrl}" alt="Piggy Bong" class="piggybong-header-logo">
+            <span id="piggybong-onboarding-title" class="piggybong-brand-name">${isEditing ? "Edit Preferences" : "Welcome to Piggy Bong!"}</span>
+          </div>
         </div>
         <button class="piggybong-modal-close-btn" aria-label="Skip">\xD7</button>
       </div>
@@ -1032,30 +940,173 @@
     </div>
   `;
     document.body.appendChild(modal);
+    const floatingButton = document.getElementById("piggybong-floating-container");
+    console.log("\u{1F437} Onboarding modal - Looking for floating button:", floatingButton ? "FOUND" : "NOT FOUND");
+    if (floatingButton) {
+      floatingButton.style.display = "none";
+      console.log("\u{1F437} Onboarding modal - Floating button HIDDEN");
+    } else {
+      console.warn("\u{1F437} Onboarding modal - Cannot hide floating button (not found in DOM)");
+    }
     const KPOP_GROUPS = [
+      // 4th Gen Girl Groups
       "NewJeans",
-      "Stray Kids",
-      "LE SSERAFIM",
       "IVE",
-      "MIYEON",
-      "SHINee",
-      "BLACKPINK",
-      "BTS",
-      "TWICE",
+      "LE SSERAFIM",
       "aespa",
+      "NMIXX",
+      "Kep1er",
+      "STAYC",
+      "Billlie",
+      "VIVIZ",
+      "tripleS",
+      "LIGHTSUM",
+      "CLASS:y",
+      "ILY:1",
+      "FIFTY FIFTY",
+      "KISS OF LIFE",
+      "BABYMONSTER",
+      "ARTMS",
+      "YOUNG POSSE",
+      // 3rd Gen Girl Groups
+      "BLACKPINK",
+      "TWICE",
       "Red Velvet",
       "ITZY",
-      "SEVENTEEN",
-      "NCT",
-      "EXO",
+      "Oh My Girl",
+      "WJSN",
+      "EVERGLOW",
+      "Weeekly",
+      "Rocket Punch",
+      "fromis_9",
+      "LOONA",
+      "CLC",
+      "Dreamcatcher",
+      "Apink",
+      "GFRIEND",
+      "MOMOLAND",
+      "Weki Meki",
+      // Legendary Girl Groups
+      "Girls' Generation",
+      "SNSD",
+      "2NE1",
+      "Wonder Girls",
+      "f(x)",
+      "KARA",
+      "SISTAR",
+      "T-ara",
+      "After School",
+      "AOA",
+      "Girl's Day",
+      "miss A",
+      // 4th Gen Boy Groups
+      "Stray Kids",
       "TXT",
       "ENHYPEN",
       "ATEEZ",
       "THE BOYZ",
-      "Kep1er",
-      "NMIXX",
       "TREASURE",
-      "MONSTA X"
+      "CRAVITY",
+      "DRIPPIN",
+      "OMEGA X",
+      "TNX",
+      "xikers",
+      "ZEROBASEONE",
+      "ZB1",
+      "BOYNEXTDOOR",
+      "RIIZE",
+      "PLAVE",
+      "&TEAM",
+      "TEMPEST",
+      "GHOST9",
+      // 3rd Gen Boy Groups
+      "BTS",
+      "SEVENTEEN",
+      "NCT",
+      "NCT 127",
+      "NCT DREAM",
+      "WayV",
+      "Monsta X",
+      "GOT7",
+      "Pentagon",
+      "SF9",
+      "The Boyz",
+      "ONEUS",
+      "ONEWE",
+      "ASTRO",
+      "Victon",
+      "Golden Child",
+      "ONF",
+      "VERIVERY",
+      "AB6IX",
+      "CIX",
+      // Legendary Boy Groups
+      "EXO",
+      "SHINee",
+      "Super Junior",
+      "TVXQ",
+      "Big Bang",
+      "INFINITE",
+      "BTOB",
+      "VIXX",
+      "Block B",
+      "Winner",
+      "iKON",
+      "B.A.P",
+      "Teen Top",
+      "BEAST",
+      "MBLAQ",
+      "2PM",
+      "SS501",
+      "Shinhwa",
+      "UKISS",
+      "ZE:A",
+      // Soloists
+      "IU",
+      "Taeyeon",
+      "Sunmi",
+      "Chungha",
+      "HyunA",
+      "Taemin",
+      "Kai",
+      "Baekhyun",
+      "Chen",
+      "D.O.",
+      "Kang Daniel",
+      "Jay Park",
+      "Crush",
+      "Dean",
+      "Zico",
+      "G-Dragon",
+      "Taeyang",
+      "Daesung",
+      "CL",
+      "PSY",
+      "Rain",
+      "BoA",
+      "Heize",
+      // Solo - (G)I-DLE members
+      "MIYEON",
+      "Soyeon",
+      "Yuqi",
+      // Groups with unique names
+      "(G)I-DLE",
+      "GOT the beat",
+      "SuperM",
+      "AKMU",
+      "Bolbbalgan4",
+      "Mamamoo",
+      "PURPLE KISS",
+      "Brave Girls",
+      "Cherry Bullet",
+      "Lapillus",
+      "LE SSERAFIM",
+      "cignature",
+      "H1-KEY",
+      "PRIMROSE",
+      "ICHILLIN'",
+      "CSR",
+      "ATBO"
     ];
     const lineupSearchInput = modal.querySelector("#lineup-search-input");
     const lineupSuggestions = modal.querySelector("#lineup-suggestions");
@@ -1211,8 +1262,38 @@
         console.log("\u{1F437} Priority cleared (no types selected)");
       }
       modal.remove();
-      if (callback) callback();
+      if (isEditing) {
+        console.log("\u{1F437} Preferences updated - need to re-analyze with new preferences!");
+        const oldAnalysisModal = document.getElementById("piggybong-modal");
+        if (oldAnalysisModal) {
+          console.log("\u{1F437} Removing old analysis modal (preferences changed)");
+          oldAnalysisModal.remove();
+        }
+        const pageText = document.body.innerText || "";
+        const pageUrl = window.location.href;
+        console.log("\u{1F437} Re-analyzing cart with updated preferences...");
+        showAnalysisModal(pageText, pageUrl);
+      } else {
+        if (callback) callback();
+      }
     });
+    const backBtn = modal.querySelector(".piggybong-back-btn");
+    if (backBtn) {
+      backBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        console.log("\u{1F437} ========== BACK BUTTON CLICKED ==========");
+        console.log("\u{1F437} Callback exists?", !!callback);
+        modal.remove();
+        console.log("\u{1F437} Preferences modal removed");
+        if (callback) {
+          console.log("\u{1F437} Calling callback to reveal analysis modal...");
+          callback();
+          console.log("\u{1F437} Callback executed");
+        } else {
+          console.error("\u{1F437} ERROR: No callback provided to back button!");
+        }
+      });
+    }
     const skipBtn = modal.querySelector("#piggy-skip-onboarding");
     const closeBtn = modal.querySelector(".piggybong-modal-close-btn");
     const overlay = modal.querySelector(".piggybong-modal-overlay");
@@ -1237,21 +1318,28 @@
     const originalRemove = modal.remove.bind(modal);
     modal.remove = function() {
       document.removeEventListener("keydown", handleEscapeKey);
+      const floatingButton2 = document.getElementById("piggybong-floating-container");
+      if (floatingButton2) {
+        floatingButton2.style.display = "";
+      }
       originalRemove();
     };
   }
-  function showPiggyBongModal(pageText, pageUrl) {
+  function showPiggyBongModal(pageText, pageUrl, options = {}) {
     console.log("\u{1F437} showPiggyBongModal called");
     console.log("\u{1F437} Page URL:", pageUrl);
-    if (!PersonalizationHelper.hasPersonalization()) {
+    console.log("\u{1F437} Options:", options);
+    const isDemo = options.isDemo || false;
+    if (!isDemo && !PersonalizationHelper.hasPersonalization()) {
       showOnboardingModal(() => {
-        showAnalysisModal(pageText, pageUrl);
+        showAnalysisModal(pageText, pageUrl, { isDemo });
       });
       return;
     }
-    showAnalysisModal(pageText, pageUrl);
+    showAnalysisModal(pageText, pageUrl, { isDemo });
   }
-  function showAnalysisModal(pageText, pageUrl) {
+  function showAnalysisModal(pageText, pageUrl, options = {}) {
+    const isDemo = options.isDemo || false;
     const existingModal = document.getElementById("piggybong-modal");
     if (existingModal) {
       existingModal.remove();
@@ -1259,6 +1347,7 @@
     console.log("\u{1F437} About to call extractProductInfo...");
     const productInfo = extractProductInfo(pageText);
     console.log("\u{1F437} extractProductInfo returned:", productInfo);
+    console.log("\u{1F437} isDemo:", isDemo);
     const modal = document.createElement("div");
     modal.id = "piggybong-modal";
     modal.className = "piggybong-modal";
@@ -1286,7 +1375,9 @@
       <div class="piggybong-modal-body" role="main" aria-live="polite" aria-atomic="true">
         <!-- Loading state for AI analysis -->
         <div class="piggybong-loading">
-          <div class="piggybong-spinner" role="status" aria-label="Loading"></div>
+          <div class="piggybong-spinner" role="status" aria-label="Loading">
+            <img src="${chrome.runtime.getURL("piggybong.png")}" alt="Piggybong lightstick">
+          </div>
           <p>Analyzing your cart...</p>
           <p style="font-size: 12px; color: #757575; margin-top: 8px;">This takes a few seconds</p>
         </div>
@@ -1297,13 +1388,32 @@
     console.log("\u{1F50D} Modal appended to body. Modal element:", modal);
     console.log("\u{1F50D} Modal classList:", modal.classList);
     console.log("\u{1F50D} Modal display style:", window.getComputedStyle(modal).display);
+    const floatingButton = document.getElementById("piggybong-floating-container");
+    console.log("\u{1F437} Analysis modal - Looking for floating button:", floatingButton ? "FOUND" : "NOT FOUND");
+    if (floatingButton) {
+      floatingButton.style.display = "none";
+      console.log("\u{1F437} Analysis modal - Floating button HIDDEN");
+    } else {
+      console.warn("\u{1F437} Analysis modal - Cannot hide floating button (not found in DOM)");
+    }
     const settingsBtn = modal.querySelector(".piggybong-settings-btn");
     settingsBtn.addEventListener("click", () => {
-      modal.remove();
+      console.log("\u{1F437} Settings clicked - hiding analysis modal:", modal.id);
+      modal.style.display = "none";
       showOnboardingModal(() => {
-        const freshPageText = document.body.innerText || "";
-        const freshPageUrl = window.location.href;
-        showAnalysisModal(freshPageText, freshPageUrl);
+        console.log("\u{1F437} ========== CALLBACK EXECUTED (REVEALING MODAL) ==========");
+        console.log("\u{1F437} Looking for analysis modal with id:", modal.id);
+        console.log("\u{1F437} Modal still in DOM?", document.body.contains(modal));
+        console.log("\u{1F437} Modal current display:", modal.style.display);
+        console.log("\u{1F437} All modals in page:", document.querySelectorAll(".piggybong-modal").length);
+        if (document.body.contains(modal)) {
+          modal.style.display = "";
+          console.log("\u{1F437} \u2705 Modal revealed successfully!");
+          console.log("\u{1F437} Modal final display:", modal.style.display);
+        } else {
+          console.error("\u{1F437} \u274C ERROR: Modal was removed from DOM!");
+          console.log("\u{1F437} Searching for modal by ID:", document.getElementById(modal.id));
+        }
       });
     });
     const closeBtn = modal.querySelector(".piggybong-modal-close-btn");
@@ -1324,6 +1434,10 @@
     const originalRemove = modal.remove.bind(modal);
     modal.remove = function() {
       document.removeEventListener("keydown", handleEscapeKey);
+      const floatingButton2 = document.getElementById("piggybong-floating-container");
+      if (floatingButton2) {
+        floatingButton2.style.display = "";
+      }
       originalRemove();
     };
     setTimeout(() => {
@@ -1331,12 +1445,15 @@
       console.log("\u{1F50D} Added .show class to modal. classList now:", modal.classList);
       console.log("\u{1F50D} Modal should now be visible with transform: translateX(0)");
     }, 10);
-    runAIAnalysis(pageText, pageUrl, productInfo);
+    runAIAnalysis(pageText, pageUrl, productInfo, isDemo);
   }
-  async function runAIAnalysis(pageText, pageUrl, productInfo) {
+  async function runAIAnalysis(pageText, pageUrl, productInfo, isDemo = false) {
     const modalBody = document.querySelector(".piggybong-modal-body");
+    const hasPersonalization = PersonalizationHelper.hasPersonalization();
     console.log("\u{1F437} runAIAnalysis() called");
     console.log("\u{1F437} productInfo:", productInfo);
+    console.log("\u{1F437} isDemo:", isDemo);
+    console.log("\u{1F437} hasPersonalization:", hasPersonalization);
     if (!productInfo || productInfo === null) {
       console.warn("\u{1F437} \u26A0\uFE0F No product info extracted - cart might be empty");
       showFallback(modalBody);
@@ -1357,29 +1474,26 @@
         console.log("\u{1F50D} Removing loading div...");
         loadingDiv.remove();
       }
-      let contextSummary = "";
-      if (productInfo.isCart && productInfo.items && productInfo.items.length > 0) {
-        const itemNames = productInfo.items.map((item) => {
-          const name = item.name.split("-")[0].trim();
-          return name;
-        });
-        const displayNames = itemNames.slice(0, 2).join(" & ");
-        const itemCount = productInfo.items.length;
-        contextSummary = `Analyzing ${itemCount} item${itemCount > 1 ? "s" : ""} from ${displayNames}${itemCount > 2 ? " and more" : ""}`;
-      } else {
-        contextSummary = `Analyzing ${productInfo.name}`;
-      }
-      const itemsHTML = aiResult.items && aiResult.items.length > 0 ? aiResult.items.map((item) => `
-        <div class="piggybong-priority-item">
-          <div class="priority-item-header-row">
-            <div class="priority-item-name">${item.name}</div>
-            <span class="priority-badge priority-${item.priority.toLowerCase()}">${item.priority}</span>
-          </div>
-        </div>
-      `).join("") : "";
+      const analysisModeBadge = isDemo ? '<span style="display: inline-block; padding: 4px 12px; background: #E8F5E9; color: #2E7D32; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 16px;">Demo Mode</span>' : "";
+      const postDemoCTA = isDemo ? `
+      <div style="margin-top: 24px; padding: 16px; background: linear-gradient(135deg, rgba(93, 44, 238, 0.05) 0%, rgba(139, 85, 237, 0.05) 100%); border-radius: 12px; border: 1px solid rgba(93, 44, 238, 0.2);">
+        <p style="font-size: 14px; color: #666; margin: 0 0 12px 0; line-height: 1.5;">
+          Want insights tuned to YOUR lineup?
+        </p>
+        <button
+          id="set-preferences-after-demo"
+          class="piggybong-primary-btn"
+          style="width: 100%; padding: 12px 24px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); border: none; border-radius: 50px; color: white; font-weight: 600; cursor: pointer; font-size: 14px; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 8px rgba(93, 44, 238, 0.3);"
+        >
+          Set My Preferences
+        </button>
+      </div>
+    ` : "";
       console.log("\u{1F50D} DEBUG futureOpportunity:", aiResult.futureOpportunity);
       console.log("\u{1F50D} DEBUG full aiResult:", aiResult);
       const analysisHTML = `
+      ${analysisModeBadge}
+
       <!-- White Card Container with title inside -->
       <div class="piggybong-insight-card">
         <h3 class="piggybong-insight-card-title">Overall Insight</h3>
@@ -1406,16 +1520,45 @@
       <div class="piggybong-future-opportunity-section">
         <h3>Smart Fan Tip</h3>
         <div class="future-opportunity-content">
-          ${aiResult.futureOpportunity}
+          <p style="margin-bottom: ${aiResult.futureOpportunity.suggestPreferenceUpdate ? "12px" : "0"};">
+            ${typeof aiResult.futureOpportunity === "object" ? aiResult.futureOpportunity.text : aiResult.futureOpportunity}
+          </p>
+          ${aiResult.futureOpportunity.suggestPreferenceUpdate ? `
+            <button class="update-lineup-btn">Update Lineup</button>
+          ` : ""}
         </div>
       </div>
       ` : "<!-- Smart Fan Tip: futureOpportunity is null or undefined -->"}
+
+      ${postDemoCTA}
     `;
       console.log("\u{1F50D} Inserting analysis HTML into modalBody...");
       console.log("\u{1F50D} modalBody:", modalBody);
       console.log("\u{1F50D} analysisHTML length:", analysisHTML.length);
       modalBody.insertAdjacentHTML("beforeend", analysisHTML);
       console.log("\u{1F50D} Analysis HTML inserted successfully!");
+      const updateLineupBtn = modalBody.querySelector(".update-lineup-btn");
+      if (updateLineupBtn) {
+        updateLineupBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          console.log('\u{1F437} User clicked "Update Lineup" button');
+          const modal = document.getElementById("piggybong-modal");
+          if (modal) modal.remove();
+          showOnboardingModal();
+        });
+      }
+      const setPreferencesAfterDemo = modalBody.querySelector("#set-preferences-after-demo");
+      if (setPreferencesAfterDemo) {
+        setPreferencesAfterDemo.addEventListener("click", (e) => {
+          e.preventDefault();
+          console.log('\u{1F437} User clicked "Set My Preferences" after demo');
+          const modal = document.getElementById("piggybong-modal");
+          if (modal) modal.remove();
+          showOnboardingModal(() => {
+            console.log("\u{1F437} Preferences saved after demo");
+          });
+        });
+      }
     } catch (error) {
       console.error("\u{1F437} \u274C AI analysis failed:", error);
       console.error("\u{1F437} Error details:", error.message);
@@ -1423,40 +1566,286 @@
       showFallback(modalBody);
     }
   }
+  var init_modal = __esm({
+    "src/content/ui/modal.js"() {
+      init_personalization();
+      init_helpers();
+      init_extractors();
+      init_analyzeWithAI();
+    }
+  });
+
+  // src/content/ui/floatingButton.js
+  init_helpers();
+  var floatingContainer = null;
+  var isButtonCreated = false;
+  function createFloatingButton(showPiggyBongModalCallback) {
+    if (isButtonCreated) return;
+    console.log("\u{1F437} Creating Piggy Bong floating button...");
+    floatingContainer = document.createElement("div");
+    floatingContainer.id = "piggybong-floating-container";
+    floatingContainer.className = "piggybong-float-container";
+    const floatingBtn = document.createElement("button");
+    floatingBtn.id = "piggybong-floating-btn";
+    floatingBtn.className = "piggybong-float-btn";
+    floatingBtn.setAttribute("aria-label", "Piggy Bong Priority Check");
+    const logoUrl = chrome.runtime.getURL("piggybong.png");
+    floatingBtn.innerHTML = `
+    <div class="piggybong-btn-icon">
+      <img src="${logoUrl}" alt="Piggy Bong" />
+    </div>
+    <div class="piggybong-btn-text">
+      <div class="piggybong-btn-title">Piggy Bong</div>
+      <div class="piggybong-btn-subtitle">K-pop Fan Companion</div>
+    </div>
+    <div class="piggybong-drag-handle">
+      <div class="drag-dots"></div>
+    </div>
+  `;
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "piggybong-close-btn";
+    closeBtn.innerHTML = "\xD7";
+    closeBtn.setAttribute("aria-label", "Close Piggy Bong");
+    closeBtn.title = "Dismiss";
+    floatingContainer.appendChild(floatingBtn);
+    floatingContainer.appendChild(closeBtn);
+    document.body.appendChild(floatingContainer);
+    const hostname = window.location.hostname;
+    const savedPosition = localStorage.getItem(`piggybong-position-${hostname}`);
+    if (savedPosition) {
+      const pos = JSON.parse(savedPosition);
+      floatingContainer.style.left = pos.left;
+      floatingContainer.style.top = pos.top;
+      floatingContainer.style.right = pos.right;
+    }
+    let isDragging = false;
+    let dragStarted = false;
+    let startX, startY, initialLeft, initialTop;
+    floatingContainer.addEventListener("mousedown", (e) => {
+      if (!e.target.closest(".piggybong-drag-handle")) return;
+      if (e.target.closest(".piggybong-close-btn")) return;
+      isDragging = true;
+      dragStarted = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = floatingContainer.getBoundingClientRect();
+      initialLeft = rect.left;
+      initialTop = rect.top;
+      floatingContainer.style.transition = "none";
+      floatingContainer.classList.add("dragging");
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    document.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+        dragStarted = true;
+      }
+      const newLeft = initialLeft + deltaX;
+      const newTop = initialTop + deltaY;
+      floatingContainer.style.left = newLeft + "px";
+      floatingContainer.style.top = newTop + "px";
+      floatingContainer.style.right = "auto";
+    });
+    document.addEventListener("mouseup", (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      floatingContainer.classList.remove("dragging");
+      const rect = floatingContainer.getBoundingClientRect();
+      const windowWidth = window.innerWidth;
+      const centerX = rect.left + rect.width / 2;
+      floatingContainer.style.transition = "left 0.3s ease, right 0.3s ease";
+      if (centerX < windowWidth / 2) {
+        floatingContainer.style.left = "20px";
+        floatingContainer.style.right = "auto";
+      } else {
+        floatingContainer.style.right = "20px";
+        floatingContainer.style.left = "auto";
+      }
+      floatingContainer.style.top = rect.top + "px";
+      setTimeout(() => {
+        const finalRect = floatingContainer.getBoundingClientRect();
+        const position = {
+          left: floatingContainer.style.left,
+          right: floatingContainer.style.right,
+          top: floatingContainer.style.top
+        };
+        localStorage.setItem(`piggybong-position-${hostname}`, JSON.stringify(position));
+      }, 300);
+    });
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      floatingContainer.style.opacity = "0";
+      floatingContainer.style.transform = "scale(0.8)";
+      setTimeout(() => {
+        floatingContainer.remove();
+      }, 200);
+    });
+    floatingBtn.addEventListener("click", async (e) => {
+      if (e.target.closest(".piggybong-drag-handle")) return;
+      if (e.target.closest(".piggybong-close-btn")) return;
+      if (dragStarted) {
+        dragStarted = false;
+        return;
+      }
+      console.log("Piggy Bong button clicked!");
+      const itemCount = getCartItemCount();
+      if (itemCount === 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleEmptyCartClick(e, showPiggyBongModalCallback);
+        return;
+      }
+      const pageText = document.body.innerText || "";
+      const pageUrl = window.location.href;
+      showPiggyBongModalCallback(pageText, pageUrl);
+    });
+    isButtonCreated = true;
+    console.log("\u{1F437} Piggy Bong: Floating button created successfully!");
+  }
+  function updateButtonState() {
+    if (!floatingContainer) return;
+    const itemCount = getCartItemCount();
+    const floatingBtn = floatingContainer.querySelector("#piggybong-floating-btn");
+    const btnTitle = floatingBtn?.querySelector(".piggybong-btn-title");
+    const btnSubtitle = floatingBtn?.querySelector(".piggybong-btn-subtitle");
+    if (btnTitle) btnTitle.textContent = "Piggy Bong";
+    if (btnSubtitle) btnSubtitle.textContent = "K-pop Fan Companion";
+    if (itemCount === 0) {
+      console.log("\u{1F437} Cart is empty - button will show empty cart message");
+    } else {
+      console.log(`\u{1F437} Cart has ${itemCount === -1 ? "items (unknown count)" : itemCount + " items"} - button ready for analysis`);
+    }
+  }
+  function handleEmptyCartClick(e, showPiggyBongModalCallback) {
+    const itemCount = getCartItemCount();
+    if (itemCount === 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      const modal = document.createElement("div");
+      modal.className = "piggybong-modal show";
+      modal.innerHTML = `
+      <div class="piggybong-modal-overlay"></div>
+      <div class="piggybong-modal-content" style="max-width: 420px;">
+        <div class="piggybong-modal-header">
+          <div class="piggybong-brand">
+            <img src="${chrome.runtime.getURL("piggybong.png")}" alt="Piggy Bong" class="piggybong-header-logo">
+            <span class="piggybong-brand-name">Piggy Bong</span>
+          </div>
+          <button class="piggybong-modal-close-btn" aria-label="Close">\xD7</button>
+        </div>
+        <div class="piggybong-modal-body">
+          <div style="text-align: center; padding: 20px;">
+            <div style="width: 120px; height: 120px; margin: 0 auto 20px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <img src="${chrome.runtime.getURL("piggybong.png")}" alt="Piggy Bong" style="width: 80px; height: 80px; filter: brightness(0) invert(1);">
+            </div>
+            <h3 style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin: 0 0 8px 0;">Smart Shopping Starts Here</h3>
+            <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0 0 24px 0;">
+              Add K-pop items to your cart or try a quick demo
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <button
+                id="try-demo-btn"
+                class="piggybong-primary-btn"
+                style="width: 100%; padding: 14px 24px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); border: none; border-radius: 50px; color: white; font-weight: 600; cursor: pointer; font-size: 15px; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 8px rgba(93, 44, 238, 0.3);"
+              >
+                Try Demo
+              </button>
+              <button
+                id="set-preferences-btn"
+                style="width: 100%; padding: 12px 24px; background: white; border: 2px solid #5D2CEE; border-radius: 50px; color: #5D2CEE; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.2s;"
+              >
+                Set Preferences
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+      document.body.appendChild(modal);
+      const floatingButton = document.getElementById("piggybong-floating-container");
+      if (floatingButton) {
+        floatingButton.style.display = "none";
+      }
+      const closeBtn = modal.querySelector(".piggybong-modal-close-btn");
+      const overlay = modal.querySelector(".piggybong-modal-overlay");
+      const tryDemoBtn = modal.querySelector("#try-demo-btn");
+      const setPreferencesBtn = modal.querySelector("#set-preferences-btn");
+      const closeModal = (e2) => {
+        if (e2) e2.stopPropagation();
+        modal.classList.add("closing");
+        setTimeout(() => modal.remove(), 300);
+      };
+      closeBtn.addEventListener("click", closeModal);
+      overlay.addEventListener("click", closeModal);
+      tryDemoBtn.addEventListener("click", () => {
+        modal.remove();
+        showDemoMode(showPiggyBongModalCallback);
+      });
+      setPreferencesBtn.addEventListener("click", () => {
+        modal.remove();
+        Promise.resolve().then(() => (init_modal(), modal_exports)).then(({ showOnboardingModal: showOnboardingModal2 }) => {
+          showOnboardingModal2();
+        });
+      });
+      const originalRemove = modal.remove.bind(modal);
+      modal.remove = function() {
+        const floatingButton2 = document.getElementById("piggybong-floating-container");
+        if (floatingButton2) {
+          floatingButton2.style.display = "";
+        }
+        originalRemove();
+      };
+      return false;
+    }
+  }
+  function showDemoMode(showPiggyBongModalCallback) {
+    const mockPageText = `
+    Shopping Cart
+
+    NewJeans - The 2nd EP 'Get Up' Album
+    Price: $24.99
+    Korean girl group debut album with photo book and photocard
+
+    aespa - Official Photocard Set (Savage Era)
+    Price: $18.99
+    Collectible photocards from Savage album era
+
+    BLACKPINK - Official Light Stick Ver 2
+    Price: $65.00
+    Official lightstick for concerts and events
+
+    Cart Total: $108.98
+  `;
+    const mockPageUrl = "https://demo.piggybong.app/cart";
+    showPiggyBongModalCallback(mockPageText, mockPageUrl, { isDemo: true });
+  }
 
   // src/content/index.js
+  init_modal();
   (function() {
     "use strict";
     if (document.getElementById("piggybong-floating-btn")) {
       return;
     }
     function initializePiggyBong() {
-      console.log("\u{1F437} Piggy Bong: Checking if this is a cart page...");
-      if (!isCartPage()) {
-        console.log("\u{1F437} Not a cart page - button will not be shown");
-        return;
-      }
-      console.log("\u{1F437} Cart page detected! Initializing button...");
+      console.log("\u{1F437} Piggy Bong: Initializing floating button...");
       createFloatingButton(showPiggyBongModal);
       updateButtonState();
-      const floatingBtn = document.getElementById("piggybong-floating-btn");
-      if (floatingBtn) {
-        floatingBtn.addEventListener("click", handleEmptyCartClick, true);
-      }
+      console.log("\u{1F437} Piggy Bong: Button ready!");
     }
     let reCheckTimeout = null;
     function scheduleReCheck() {
       clearTimeout(reCheckTimeout);
       reCheckTimeout = setTimeout(() => {
-        console.log("\u{1F437} Re-checking cart state...");
-        if (isCartPage() && !isButtonCreated) {
-          console.log("\u{1F437} Cart appeared dynamically - creating button now!");
+        console.log("\u{1F437} Re-checking state...");
+        if (!isButtonCreated) {
+          console.log("\u{1F437} Page loaded dynamically - creating button now!");
           createFloatingButton(showPiggyBongModal);
           updateButtonState();
-          const floatingBtn = document.getElementById("piggybong-floating-btn");
-          if (floatingBtn) {
-            floatingBtn.addEventListener("click", handleEmptyCartClick, true);
-          }
         }
         if (isButtonCreated) {
           updateButtonState();

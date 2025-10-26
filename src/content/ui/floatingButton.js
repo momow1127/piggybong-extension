@@ -31,7 +31,10 @@ export function createFloatingButton(showPiggyBongModalCallback) {
     <div class="piggybong-btn-icon">
       <img src="${logoUrl}" alt="Piggy Bong" />
     </div>
-    <span class="piggybong-btn-text">Should I Buy This?</span>
+    <div class="piggybong-btn-text">
+      <div class="piggybong-btn-title">Piggy Bong</div>
+      <div class="piggybong-btn-subtitle">K-pop Fan Companion</div>
+    </div>
     <div class="piggybong-drag-handle">
       <div class="drag-dots"></div>
     </div>
@@ -170,6 +173,15 @@ export function createFloatingButton(showPiggyBongModalCallback) {
 
     console.log('Piggy Bong button clicked!');
 
+    // Check for empty cart first
+    const itemCount = getCartItemCount();
+    if (itemCount === 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleEmptyCartClick(e, showPiggyBongModalCallback);
+      return;
+    }
+
     // Get current page info
     const pageText = document.body.innerText || '';
     const pageUrl = window.location.href;
@@ -188,10 +200,12 @@ export function updateButtonState() {
 
   const itemCount = getCartItemCount();
   const floatingBtn = floatingContainer.querySelector('#piggybong-floating-btn');
-  const btnText = floatingBtn?.querySelector('.piggybong-btn-text');
+  const btnTitle = floatingBtn?.querySelector('.piggybong-btn-title');
+  const btnSubtitle = floatingBtn?.querySelector('.piggybong-btn-subtitle');
 
   // Always keep button text consistent and fully visible
-  if (btnText) btnText.textContent = 'Should I Buy This?';
+  if (btnTitle) btnTitle.textContent = 'Piggy Bong';
+  if (btnSubtitle) btnSubtitle.textContent = 'K-pop Fan Companion';
 
   // Log cart state for debugging
   if (itemCount === 0) {
@@ -201,19 +215,19 @@ export function updateButtonState() {
   }
 }
 
-export function handleEmptyCartClick(e) {
+export function handleEmptyCartClick(e, showPiggyBongModalCallback) {
   const itemCount = getCartItemCount();
 
   if (itemCount === 0) {
     e.preventDefault();
     e.stopPropagation();
 
-    // Show gentle message
+    // Show empty state with demo and preferences options
     const modal = document.createElement('div');
     modal.className = 'piggybong-modal show';
     modal.innerHTML = `
       <div class="piggybong-modal-overlay"></div>
-      <div class="piggybong-modal-content" style="max-width: 380px;">
+      <div class="piggybong-modal-content" style="max-width: 420px;">
         <div class="piggybong-modal-header">
           <div class="piggybong-brand">
             <img src="${chrome.runtime.getURL('piggybong.png')}" alt="Piggy Bong" class="piggybong-header-logo">
@@ -222,20 +236,46 @@ export function handleEmptyCartClick(e) {
           <button class="piggybong-modal-close-btn" aria-label="Close">×</button>
         </div>
         <div class="piggybong-modal-body">
-          <div style="text-align: center; padding: 16px;">
-            <div style="font-size: 48px; margin-bottom: 16px;">🛒</div>
-            <h3 style="font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 0 0 12px 0;">Nothing in your cart yet!</h3>
-            <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0;">
-              Add some K-pop items and I'll be here to help you decide before checkout
+          <div style="text-align: center; padding: 20px;">
+            <div style="width: 120px; height: 120px; margin: 0 auto 20px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <img src="${chrome.runtime.getURL('piggybong.png')}" alt="Piggy Bong" style="width: 80px; height: 80px; filter: brightness(0) invert(1);">
+            </div>
+            <h3 style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin: 0 0 8px 0;">Smart Shopping Starts Here</h3>
+            <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0 0 24px 0;">
+              Add K-pop items to your cart or try a quick demo
             </p>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <button
+                id="try-demo-btn"
+                class="piggybong-primary-btn"
+                style="width: 100%; padding: 14px 24px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); border: none; border-radius: 50px; color: white; font-weight: 600; cursor: pointer; font-size: 15px; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 8px rgba(93, 44, 238, 0.3);"
+              >
+                Try Demo
+              </button>
+              <button
+                id="set-preferences-btn"
+                style="width: 100%; padding: 12px 24px; background: white; border: 2px solid #5D2CEE; border-radius: 50px; color: #5D2CEE; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.2s;"
+              >
+                Set Preferences
+              </button>
+            </div>
           </div>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
 
+    // Hide floating button when empty cart modal opens
+    const floatingButton = document.getElementById('piggybong-floating-container');
+    if (floatingButton) {
+      floatingButton.style.display = 'none';
+    }
+
     const closeBtn = modal.querySelector('.piggybong-modal-close-btn');
     const overlay = modal.querySelector('.piggybong-modal-overlay');
+    const tryDemoBtn = modal.querySelector('#try-demo-btn');
+    const setPreferencesBtn = modal.querySelector('#set-preferences-btn');
 
     const closeModal = (e) => {
       if (e) e.stopPropagation();
@@ -246,6 +286,58 @@ export function handleEmptyCartClick(e) {
     closeBtn.addEventListener('click', closeModal);
     overlay.addEventListener('click', closeModal);
 
+    // Try Demo button - show demo analysis
+    tryDemoBtn.addEventListener('click', () => {
+      modal.remove();
+      showDemoMode(showPiggyBongModalCallback);
+    });
+
+    // Set Preferences button - open onboarding modal
+    setPreferencesBtn.addEventListener('click', () => {
+      modal.remove();
+      // Import and call showOnboardingModal
+      import('./modal.js').then(({ showOnboardingModal }) => {
+        showOnboardingModal();
+      });
+    });
+
+    // Clean up: show floating button when modal is removed
+    const originalRemove = modal.remove.bind(modal);
+    modal.remove = function() {
+      const floatingButton = document.getElementById('piggybong-floating-container');
+      if (floatingButton) {
+        floatingButton.style.display = '';  // Reset to default
+      }
+      originalRemove();
+    };
+
     return false;
   }
+}
+
+// Demo mode with mock K-pop cart items
+function showDemoMode(showPiggyBongModalCallback) {
+  // Create mock page data with K-pop items
+  const mockPageText = `
+    Shopping Cart
+
+    NewJeans - The 2nd EP 'Get Up' Album
+    Price: $24.99
+    Korean girl group debut album with photo book and photocard
+
+    aespa - Official Photocard Set (Savage Era)
+    Price: $18.99
+    Collectible photocards from Savage album era
+
+    BLACKPINK - Official Light Stick Ver 2
+    Price: $65.00
+    Official lightstick for concerts and events
+
+    Cart Total: $108.98
+  `;
+
+  const mockPageUrl = 'https://demo.piggybong.app/cart';
+
+  // Call the main modal with demo data
+  showPiggyBongModalCallback(mockPageText, mockPageUrl, { isDemo: true });
 }

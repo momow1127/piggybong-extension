@@ -33,7 +33,25 @@ function validateAIResult(ai) {
 
   // New pattern-based fields
   safe.patternInsight = ai.patternInsight ? cleanText(ai.patternInsight) : null;
-  safe.futureOpportunity = ai.futureOpportunity ? cleanText(ai.futureOpportunity) : null;
+
+  // Handle futureOpportunity as object or string
+  if (ai.futureOpportunity) {
+    if (typeof ai.futureOpportunity === 'object') {
+      safe.futureOpportunity = {
+        text: cleanText(ai.futureOpportunity.text),
+        suggestPreferenceUpdate: ai.futureOpportunity.suggestPreferenceUpdate || false,
+        artistName: ai.futureOpportunity.artistName || null
+      };
+    } else {
+      safe.futureOpportunity = {
+        text: cleanText(ai.futureOpportunity),
+        suggestPreferenceUpdate: false,
+        artistName: null
+      };
+    }
+  } else {
+    safe.futureOpportunity = null;
+  }
 
   return safe;
 }
@@ -129,6 +147,10 @@ export async function analyzeWithAI(pageText, pageUrl, productInfo) {
   const classifiedItems = analyzeItemsWithJavaScript(productInfo.items, userGroups, priorityTypes);
   console.log("✅ JavaScript badge classification:", classifiedItems.map(i => `${i.name.substring(0, 30)}... → ${i.priority}`));
 
+  // Sort items by priority score (Top Priority first, Multi-Stan last)
+  classifiedItems.sort((a, b) => b.score - a.score);
+  console.log("✅ Items sorted by priority:", classifiedItems.map(i => `${i.priority} (${i.score}): ${i.name.substring(0, 30)}...`));
+
   // Step 2: Try to use AI for natural language insights only
   try {
     console.log("🐷 Requesting AI insights (overallInsight, futureOpportunity)...");
@@ -148,11 +170,15 @@ export async function analyzeWithAI(pageText, pageUrl, productInfo) {
     if (response.success && response.result) {
       console.log("🐷 ✅ AI insights received from background");
 
-      // Merge: Use JS badges + AI insights
+      // Generate Smart Fan Tip from actual data (JavaScript, not AI)
+      const futureOpportunity = generateSmartFanTip(patterns, productInfo.items, userGroups);
+      console.log("🐷 Smart Fan Tip generated:", futureOpportunity);
+
+      // Merge: Use JS badges + JS Smart Fan Tip + AI Overall Insight
       return validateAIResult({
-        items: classifiedItems, // ✅ Use JavaScript-classified badges (100% accurate)
-        overallInsight: response.result.overallInsight,
-        futureOpportunity: response.result.futureOpportunity,
+        items: classifiedItems, // ✅ JavaScript-classified badges (100% accurate)
+        overallInsight: response.result.overallInsight, // ✅ AI-generated insight (creative)
+        futureOpportunity, // ✅ JavaScript-generated tip (factual, no hallucination)
         priorityTip: response.result.priorityTip || "Focus on lineup matches first, then explore new groups at your pace",
         patternInsight: response.result.patternInsight || null
       });
@@ -169,6 +195,97 @@ export async function analyzeWithAI(pageText, pageUrl, productInfo) {
   }
 }
 
+// Generate Smart Fan Tip from actual cart history data (no AI hallucination)
+function generateSmartFanTip(patterns, currentItems, userGroups) {
+  // First-time user tip
+  if (!patterns || patterns.totalCarts < 2) {
+    return {
+      text: "This is your first cart! Keep shopping and I'll learn your patterns. I'll spot which artists you love and when you shop most.",
+      suggestPreferenceUpdate: false,
+      artistName: null
+    };
+  }
+
+  const userGroupsLower = userGroups.map(g => g.toLowerCase());
+
+  // Priority 1: Abandoned items in current cart
+  const currentItemNames = currentItems.map(item => item.name.toLowerCase());
+  const abandonedInCart = patterns.abandonedItems.filter(abandoned =>
+    currentItemNames.some(current => current.includes(abandoned.name.toLowerCase()))
+  );
+
+  if (abandonedInCart.length > 0) {
+    const item = abandonedInCart[0];
+    // Extract artist from item name (e.g., "BIGBANG - [COM 전용] Big Bang..." → "BIGBANG")
+    const artistMatch = item.name.match(/^([A-Za-z\s&]+)/);
+    const itemLabel = artistMatch ? artistMatch[1].trim() : 'this';
+
+    // Check if artist is NOT in lineup (suggest preference update)
+    const artistNotInLineup = itemLabel !== 'this' &&
+                              !userGroupsLower.some(group =>
+                                itemLabel.toLowerCase().includes(group) ||
+                                group.includes(itemLabel.toLowerCase())
+                              );
+
+    return {
+      text: artistNotInLineup && item.timesAdded >= 3
+        ? `${itemLabel} added ${item.timesAdded} times but not in your lineup. Want to add them?`
+        : `${itemLabel} added ${item.timesAdded} times. Just get it!`,
+      suggestPreferenceUpdate: artistNotInLineup && item.timesAdded >= 3,
+      artistName: artistNotInLineup ? itemLabel : null
+    };
+  }
+
+  // Priority 2: Peak month is current month
+  const peakMonth = Object.entries(patterns.seasonalPatterns)
+    .sort((a, b) => b[1] - a[1])[0];
+  const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
+
+  if (peakMonth && peakMonth[0] === currentMonth && patterns.totalCarts >= 3) {
+    return {
+      text: `${currentMonth} is your peak shopping month. You're on schedule!`,
+      suggestPreferenceUpdate: false,
+      artistName: null
+    };
+  }
+
+  // Priority 3: Top artist pattern
+  const topArtist = Object.entries(patterns.artistFrequency)
+    .sort((a, b) => b[1] - a[1])[0];
+
+  if (topArtist && topArtist[1] >= 3) {
+    const percentage = Math.round((topArtist[1] / patterns.totalCarts) * 100);
+
+    // Check if top artist is NOT in lineup
+    const artistNotInLineup = !userGroupsLower.some(group =>
+      topArtist[0].toLowerCase().includes(group) ||
+      group.includes(topArtist[0].toLowerCase())
+    );
+
+    return {
+      text: artistNotInLineup
+        ? `${topArtist[0]} shows up in ${percentage}% of your carts but not in your lineup. Want to add them?`
+        : `${topArtist[0]} shows up in ${percentage}% of your carts. Dedicated!`,
+      suggestPreferenceUpdate: artistNotInLineup,
+      artistName: artistNotInLineup ? topArtist[0] : null
+    };
+  }
+
+  // Priority 4: Type collector insight
+  const topType = Object.entries(patterns.typeFrequency)
+    .sort((a, b) => b[1] - a[1])[0];
+
+  if (topType && topType[1] >= 3) {
+    return {
+      text: `You collect ${topType[0]}s!`,
+      suggestPreferenceUpdate: false,
+      artistName: null
+    };
+  }
+
+  return null;
+}
+
 // Helper function for JavaScript fallback
 function useJavaScriptFallback(productInfo, userGroups, priorityTypes, patterns) {
   const analyzedItems = analyzeItemsWithJavaScript(
@@ -180,45 +297,14 @@ function useJavaScriptFallback(productInfo, userGroups, priorityTypes, patterns)
   const lineupText = userGroups.join(', ');
   const typesText = priorityTypes.length > 0 ? ` and ${priorityTypes.join(', ')} items` : '';
 
-  // Generate pattern-based insights
-  let patternInsight = null;
-  let futureOpportunity = null;
-
-  if (patterns) {
-    // Check for abandoned items in current cart
-    const currentItemNames = productInfo.items.map(item => item.name.toLowerCase());
-    const abandonedInCart = patterns.abandonedItems.filter(abandoned =>
-      currentItemNames.some(current => current.includes(abandoned.name.toLowerCase()))
-    );
-
-    if (abandonedInCart.length > 0) {
-      patternInsight = `💭 You've added "${abandonedInCart[0].name}" ${abandonedInCart[0].timesAdded} times before but never purchased. Trust your instincts!`;
-    }
-
-    // Check for lineup mismatches
-    if (patterns.lineupMismatch && patterns.lineupMismatch.length > 0) {
-      const topMismatch = patterns.lineupMismatch[0];
-      const freq = patterns.artistFrequency[topMismatch];
-      patternInsight = patternInsight || `📊 Your cart history shows ${freq}x ${topMismatch} items, but they're not in your lineup. Consider adding them!`;
-    }
-
-    // Suggest waiting based on seasonal patterns
-    const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
-    const peakMonths = Object.entries(patterns.seasonalPatterns)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 2)
-      .map(([month]) => month);
-
-    if (peakMonths.length > 0 && !peakMonths.includes(currentMonth)) {
-      futureOpportunity = `🎯 Your collecting pattern peaks in ${peakMonths.join(' and ')}. Save your budget for then when ${lineupText} typically release new content!`;
-    }
-  }
+  // Generate Smart Fan Tip from actual data (JavaScript, not AI)
+  const futureOpportunity = generateSmartFanTip(patterns, productInfo.items, userGroups);
 
   return validateAIResult({
     items: analyzedItems,
     overallInsight: `Your cart has ${analyzedItems.length} items! Focus on ${lineupText}${typesText} to build your collection.`,
     priorityTip: `Start with ${lineupText} items${priorityTypes.length > 0 ? ` and ${priorityTypes.join(', ')} types` : ''} first.`,
-    patternInsight,
+    patternInsight: null,
     futureOpportunity
   });
 }
