@@ -173,6 +173,10 @@ export function createFloatingButton(showPiggyBongModalCallback) {
 
     console.log('Piggy Bong button clicked!');
 
+    // Hide floating button immediately
+    floatingContainer.style.display = 'none';
+    console.log('🐷 Floating button hidden');
+
     // Check for empty cart first
     const itemCount = getCartItemCount();
     if (itemCount === 0) {
@@ -292,12 +296,17 @@ export function handleEmptyCartClick(e, showPiggyBongModalCallback) {
       showDemoMode(showPiggyBongModalCallback);
     });
 
-    // Set Preferences button - open onboarding modal
+    // Set Preferences button - open onboarding modal (first-time setup)
     setPreferencesBtn.addEventListener('click', () => {
       modal.remove();
       // Import and call showOnboardingModal
       import('./modal.js').then(({ showOnboardingModal }) => {
-        showOnboardingModal();
+        // Pass empty callback - user is setting up first time, no analysis to return to
+        // But provide callback so back button doesn't error
+        showOnboardingModal(() => {
+          console.log('🐷 First-time preferences saved from empty cart flow');
+          // No action needed - user will manually add items and analyze later
+        });
       });
     });
 

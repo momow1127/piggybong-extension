@@ -940,14 +940,6 @@
     </div>
   `;
     document.body.appendChild(modal);
-    const floatingButton = document.getElementById("piggybong-floating-container");
-    console.log("\u{1F437} Onboarding modal - Looking for floating button:", floatingButton ? "FOUND" : "NOT FOUND");
-    if (floatingButton) {
-      floatingButton.style.display = "none";
-      console.log("\u{1F437} Onboarding modal - Floating button HIDDEN");
-    } else {
-      console.warn("\u{1F437} Onboarding modal - Cannot hide floating button (not found in DOM)");
-    }
     const KPOP_GROUPS = [
       // 4th Gen Girl Groups
       "NewJeans",
@@ -1318,9 +1310,9 @@
     const originalRemove = modal.remove.bind(modal);
     modal.remove = function() {
       document.removeEventListener("keydown", handleEscapeKey);
-      const floatingButton2 = document.getElementById("piggybong-floating-container");
-      if (floatingButton2) {
-        floatingButton2.style.display = "";
+      const floatingButton = document.getElementById("piggybong-floating-container");
+      if (floatingButton) {
+        floatingButton.style.display = "";
       }
       originalRemove();
     };
@@ -1542,9 +1534,16 @@
         updateLineupBtn.addEventListener("click", (e) => {
           e.preventDefault();
           console.log('\u{1F437} User clicked "Update Lineup" button');
-          const modal = document.getElementById("piggybong-modal");
-          if (modal) modal.remove();
-          showOnboardingModal();
+          const analysisModal = document.getElementById("piggybong-modal");
+          if (analysisModal) {
+            analysisModal.style.display = "none";
+          }
+          showOnboardingModal(() => {
+            if (analysisModal) analysisModal.remove();
+            const pageText2 = document.body.innerText || "";
+            const pageUrl2 = window.location.href;
+            showAnalysisModal(pageText2, pageUrl2);
+          });
         });
       }
       const setPreferencesAfterDemo = modalBody.querySelector("#set-preferences-after-demo");
@@ -1691,6 +1690,8 @@
         return;
       }
       console.log("Piggy Bong button clicked!");
+      floatingContainer.style.display = "none";
+      console.log("\u{1F437} Floating button hidden");
       const itemCount = getCartItemCount();
       if (itemCount === 0) {
         e.preventDefault();
@@ -1788,7 +1789,9 @@
       setPreferencesBtn.addEventListener("click", () => {
         modal.remove();
         Promise.resolve().then(() => (init_modal(), modal_exports)).then(({ showOnboardingModal: showOnboardingModal2 }) => {
-          showOnboardingModal2();
+          showOnboardingModal2(() => {
+            console.log("\u{1F437} First-time preferences saved from empty cart flow");
+          });
         });
       });
       const originalRemove = modal.remove.bind(modal);

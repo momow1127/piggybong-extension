@@ -137,15 +137,7 @@ export function showOnboardingModal(callback) {
 
   document.body.appendChild(modal);
 
-  // Hide floating button when onboarding modal opens
-  const floatingButton = document.getElementById('piggybong-floating-container');
-  console.log('🐷 Onboarding modal - Looking for floating button:', floatingButton ? 'FOUND' : 'NOT FOUND');
-  if (floatingButton) {
-    floatingButton.style.display = 'none';
-    console.log('🐷 Onboarding modal - Floating button HIDDEN');
-  } else {
-    console.warn('🐷 Onboarding modal - Cannot hide floating button (not found in DOM)');
-  }
+  // Floating button already hidden when clicked - no need to hide again
 
   // ============================================
   // Lineup Search/Autocomplete Logic
@@ -777,12 +769,21 @@ async function runAIAnalysis(pageText, pageUrl, productInfo, isDemo = false) {
         e.preventDefault();
         console.log('🐷 User clicked "Update Lineup" button');
 
-        // Close current modal
-        const modal = document.getElementById('piggybong-modal');
-        if (modal) modal.remove();
+        // Hide current modal (don't remove - might want to cache)
+        const analysisModal = document.getElementById('piggybong-modal');
+        if (analysisModal) {
+          analysisModal.style.display = 'none';
+        }
 
-        // Open preferences modal (onboarding screen)
-        showOnboardingModal();
+        // Open preferences modal with callback to re-analyze
+        showOnboardingModal(() => {
+          // After saving preferences, remove old modal and re-analyze
+          if (analysisModal) analysisModal.remove();
+
+          const pageText = document.body.innerText || '';
+          const pageUrl = window.location.href;
+          showAnalysisModal(pageText, pageUrl);
+        });
       });
     }
 
