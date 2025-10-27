@@ -219,9 +219,10 @@ We follow the proven pattern used by successful shopping extensions (Honey, Phia
 
 ## 🔮 Future Enhancements
 
+- **User Feedback System**: Thumbs up/down feedback with optional comments to track AI insight helpfulness and improve recommendations
 - **Wishlist Tracking**: Compare purchases against saved collection goals
 - **Spending Insights**: Monthly collection priority trends (local storage)
-- **Community Features**: Anonymous FOMO pattern insights
+- **Community Features**: Anonymous FOMO pattern insights aggregated via Supabase
 - **Multi-Language**: Korean/Japanese support using Translator API
 - **Smart Reminders**: "Still want this after 24 hours?" prompts
 
