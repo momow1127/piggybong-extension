@@ -3,8 +3,7 @@
 // Automatically injected into all pages
 // ===========================================
 
-import { isCartPage, getCartItemCount } from './utils/helpers.js';
-import { createFloatingButton, updateButtonState, handleEmptyCartClick, floatingContainer, isButtonCreated } from './ui/floatingButton.js';
+import { createFloatingButton, updateButtonState, isButtonCreated } from './ui/floatingButton.js';
 import { showPiggyBongModal } from './ui/modal.js';
 
 (function() {
@@ -20,23 +19,13 @@ import { showPiggyBongModal } from './ui/modal.js';
   // ===========================================
 
   function initializePiggyBong() {
-    console.log('🐷 Piggy Bong: Checking if this is a cart page...');
+    console.log('🐷 Piggy Bong: Initializing floating button...');
 
-    // Strict mode: only show on cart pages
-    if (!isCartPage()) {
-      console.log('🐷 Not a cart page - button will not be shown');
-      return;
-    }
-
-    console.log('🐷 Cart page detected! Initializing button...');
+    // Show button on all pages (reliable across all K-pop shops)
     createFloatingButton(showPiggyBongModal);
     updateButtonState();
 
-    // Add empty cart handler to the button
-    const floatingBtn = document.getElementById('piggybong-floating-btn');
-    if (floatingBtn) {
-      floatingBtn.addEventListener('click', handleEmptyCartClick, true); // Capture phase
-    }
+    console.log('🐷 Piggy Bong: Button ready!');
   }
 
   // ===========================================
@@ -49,21 +38,16 @@ import { showPiggyBongModal } from './ui/modal.js';
     // Debounce: only re-check after 2 seconds of no mutations
     clearTimeout(reCheckTimeout);
     reCheckTimeout = setTimeout(() => {
-      console.log('🐷 Re-checking cart state...');
+      console.log('🐷 Re-checking state...');
 
-      // If cart page detected and button doesn't exist yet, create it
-      if (isCartPage() && !isButtonCreated) {
-        console.log('🐷 Cart appeared dynamically - creating button now!');
+      // If button doesn't exist yet, create it (for dynamic page loads)
+      if (!isButtonCreated) {
+        console.log('🐷 Page loaded dynamically - creating button now!');
         createFloatingButton(showPiggyBongModal);
         updateButtonState();
-
-        const floatingBtn = document.getElementById('piggybong-floating-btn');
-        if (floatingBtn) {
-          floatingBtn.addEventListener('click', handleEmptyCartClick, true);
-        }
       }
 
-      // If button exists, update its state
+      // If button exists, update its state (for cart changes)
       if (isButtonCreated) {
         updateButtonState();
       }

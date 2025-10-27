@@ -4,29 +4,42 @@
 
 export function isCartPage() {
   const url = window.location.href.toLowerCase();
+  const pathname = window.location.pathname.toLowerCase();
   const pageText = document.body.innerText.toLowerCase();
 
-  // Check URL patterns for cart/checkout pages
+  // Check URL patterns for cart/checkout pages (STRICT - must be in path or query)
   const cartUrlPatterns = [
-    '/cart', '/basket', '/bag', '/checkout',
+    '/cart', '/basket', '/bag', '/checkout', '/mycart',
     '/order', '/purchase', '/payment',
     'step=1', 'step=2', 'step=3',
     'orderform', 'shoppingcart'
   ];
 
-  // Check page content indicators
-  const cartTextIndicators = [
-    'shopping cart', 'shopping bag', 'my cart', 'your cart',
-    'checkout', 'items in cart', 'proceed to checkout',
-    'order summary', 'cart total', 'subtotal',
-    'remove from cart', 'update cart', 'cart is empty'
+  // Strict URL check - must be in pathname or query params
+  const hasCartUrl = cartUrlPatterns.some(pattern => pathname.includes(pattern) || url.includes(pattern));
+
+  // If URL clearly indicates cart page, trust it immediately
+  if (hasCartUrl) {
+    return true;
+  }
+
+  // Check page content indicators (MORE STRICT - need strong signals)
+  const strongCartIndicators = [
+    'proceed to checkout',
+    'order summary',
+    'remove from cart',
+    'update cart',
+    'cart is empty',
+    'your cart is empty',
+    'items in cart',
+    'cart total'
   ];
 
-  // Match either URL or page content
-  const hasCartUrl = cartUrlPatterns.some(pattern => url.includes(pattern));
-  const hasCartContent = cartTextIndicators.some(text => pageText.includes(text));
+  // Only trust content indicators if we find MULTIPLE strong signals
+  const strongSignalCount = strongCartIndicators.filter(text => pageText.includes(text)).length;
 
-  return hasCartUrl || hasCartContent;
+  // Need at least 2 strong signals to confirm it's a cart page (prevents false positives from nav menus)
+  return strongSignalCount >= 2;
 }
 
 export function getCartItemCount() {

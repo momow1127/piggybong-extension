@@ -45,7 +45,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["piggybong.png", "settings.svg", "modal.html", "modal.js", "modal.css"],
+      "resources": ["piggybong.png", "settings.svg", "shopping-cart.svg", "modal.html", "modal.js", "modal.css"],
       "matches": ["<all_urls>"]
     }
   ]

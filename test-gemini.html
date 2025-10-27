@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini Nano Diagnostic Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-card {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .status {
+      padding: 8px 16px;
+      border-radius: 20px;
+      display: inline-block;
+      font-weight: 600;
+      margin: 5px 0;
+    }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+    .status.warning { background: #fff3cd; color: #856404; }
+    h2 { color: #333; margin-top: 0; }
+    pre {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    button {
+      background: #5D2CEE;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 10px 5px 10px 0;
+    }
+    button:hover {
+      background: #4A23BD;
+    }
+    .code {
+      background: #f8f9fa;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Gemini Nano Diagnostic Test</h1>
+
+  <div class="test-card">
+    <h2>1️⃣ Browser Information</h2>
+    <div id="browser-info"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>2️⃣ API Availability Check</h2>
+    <div id="api-check"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>3️⃣ Chrome Flags Status</h2>
+    <div id="flags-status">
+      <p>Check these flags in <span class="code">chrome://flags</span>:</p>
+      <ul>
+        <li><strong>Prompt API for Gemini Nano</strong> - Must be "Enabled"</li>
+        <li><strong>Enables optimization guide on device</strong> - Must be "Enabled BypassPerfRequirement"</li>
+      </ul>
+      <button onclick="window.open('chrome://flags/#prompt-api-for-gemini-nano', '_blank')">Open Prompt API Flag</button>
+      <button onclick="window.open('chrome://flags/#optimization-guide-on-device-model', '_blank')">Open Optimization Flag</button>
+    </div>
+  </div>
+
+  <div class="test-card">
+    <h2>4️⃣ Component Status</h2>
+    <div id="component-status">
+      <p>Check <span class="code">chrome://components</span> for "Optimization Guide On Device Model"</p>
+      <button onclick="window.open('chrome://components', '_blank')">Open Components Page</button>
+      <p style="margin-top: 16px; color: #666; font-size: 14px;">
+        <strong>Look for:</strong> "Optimization Guide On Device Model"<br>
+        <strong>Expected version:</strong> 2025.x.x.xxxx<br>
+        <strong>Status:</strong> Should show version number (not "0.0.0.0")
+      </p>
+    </div>
+  </div>
+
+  <div class="test-card">
+    <h2>5️⃣ API Capabilities Test</h2>
+    <button onclick="testCapabilities()">Test API Capabilities</button>
+    <div id="capabilities-result"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>6️⃣ Create Session Test</h2>
+    <button onclick="testCreateSession()">Test Create Session</button>
+    <div id="session-result"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>7️⃣ Full AI Test (Prompt)</h2>
+    <button onclick="testFullAI()">Test Complete AI Flow</button>
+    <div id="full-test-result"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>📋 Troubleshooting Steps</h2>
+    <ol style="line-height: 1.8;">
+      <li>Make sure you're using <strong>Chrome 127+</strong> or <strong>Chrome Dev/Canary</strong></li>
+      <li>Enable both flags in chrome://flags (see section 3 above)</li>
+      <li>Click "Relaunch" button in chrome://flags</li>
+      <li>Wait 2-3 minutes after relaunch for model to download</li>
+      <li>Check chrome://components to verify model is downloaded</li>
+      <li>If model version shows "0.0.0.0", click "Check for update"</li>
+      <li>After update completes, wait another 1-2 minutes</li>
+      <li>Refresh this page and run tests again</li>
+    </ol>
+  </div>
+
+  <script>
+    // 1. Browser Information
+    function checkBrowserInfo() {
+      const info = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        chromiumVersion: navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || 'Unknown'
+      };
+
+      const minVersion = 127;
+      const currentVersion = parseInt(info.chromiumVersion);
+      const versionOK = currentVersion >= minVersion;
+
+      document.getElementById('browser-info').innerHTML = `
+        <p><strong>User Agent:</strong> ${info.userAgent}</p>
+        <p><strong>Platform:</strong> ${info.platform}</p>
+        <p><strong>Chrome Version:</strong> ${info.chromiumVersion}
+          <span class="status ${versionOK ? 'success' : 'error'}">
+            ${versionOK ? '✓ Compatible' : '✗ Need 127+'}
+          </span>
+        </p>
+      `;
+    }
+
+    // 2. API Availability
+    function checkAPIAvailability() {
+      const checks = {
+        'window.ai': typeof window.ai !== 'undefined',
+        'window.ai.languageModel': typeof window.ai?.languageModel !== 'undefined',
+        'self.ai': typeof self.ai !== 'undefined',
+        'self.ai.languageModel': typeof self.ai?.languageModel !== 'undefined',
+        'ai (global)': typeof ai !== 'undefined',
+        'chrome.aiOriginTrial': typeof chrome?.aiOriginTrial !== 'undefined'
+      };
+
+      let html = '<table style="width: 100%; border-collapse: collapse;">';
+      html += '<tr style="border-bottom: 2px solid #ddd;"><th style="text-align: left; padding: 8px;">API Endpoint</th><th style="text-align: left; padding: 8px;">Status</th></tr>';
+
+      for (const [name, available] of Object.entries(checks)) {
+        html += `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px;"><code>${name}</code></td>
+            <td style="padding: 8px;">
+              <span class="status ${available ? 'success' : 'error'}">
+                ${available ? '✓ Available' : '✗ Not Available'}
+              </span>
+            </td>
+          </tr>
+        `;
+      }
+      html += '</table>';
+
+      const anyAvailable = Object.values(checks).some(v => v);
+      html += `<p style="margin-top: 16px;"><strong>Result:</strong>
+        <span class="status ${anyAvailable ? 'success' : 'error'}">
+          ${anyAvailable ? '✓ At least one API endpoint available' : '✗ No API endpoints available'}
+        </span>
+      </p>`;
+
+      document.getElementById('api-check').innerHTML = html;
+    }
+
+    // 5. Test Capabilities
+    async function testCapabilities() {
+      const resultDiv = document.getElementById('capabilities-result');
+      resultDiv.innerHTML = '<p>Testing...</p>';
+
+      try {
+        let aiAPI = null;
+
+        if (window.ai?.languageModel) {
+          aiAPI = window.ai.languageModel;
+        } else if (self.ai?.languageModel) {
+          aiAPI = self.ai.languageModel;
+        } else if (typeof ai !== 'undefined' && ai.languageModel) {
+          aiAPI = ai.languageModel;
+        }
+
+        if (!aiAPI) {
+          throw new Error('No AI API available');
+        }
+
+        const capabilities = await aiAPI.capabilities();
+
+        resultDiv.innerHTML = `
+          <div class="status success">✓ Capabilities check successful!</div>
+          <pre>${JSON.stringify(capabilities, null, 2)}</pre>
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <div class="status error">✗ Error: ${error.message}</div>
+          <pre>${error.stack}</pre>
+        `;
+      }
+    }
+
+    // 6. Test Create Session
+    async function testCreateSession() {
+      const resultDiv = document.getElementById('session-result');
+      resultDiv.innerHTML = '<p>Testing...</p>';
+
+      try {
+        let aiAPI = null;
+
+        if (window.ai?.languageModel) {
+          aiAPI = window.ai.languageModel;
+        } else if (self.ai?.languageModel) {
+          aiAPI = self.ai.languageModel;
+        } else if (typeof ai !== 'undefined' && ai.languageModel) {
+          aiAPI = ai.languageModel;
+        }
+
+        if (!aiAPI) {
+          throw new Error('No AI API available');
+        }
+
+        const session = await aiAPI.create({
+          temperature: 0.5,
+          topK: 3
+        });
+
+        resultDiv.innerHTML = `
+          <div class="status success">✓ Session created successfully!</div>
+          <p>Session object: ${session}</p>
+        `;
+
+        session.destroy();
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <div class="status error">✗ Error: ${error.message}</div>
+          <pre>${error.stack}</pre>
+        `;
+      }
+    }
+
+    // 7. Full AI Test
+    async function testFullAI() {
+      const resultDiv = document.getElementById('full-test-result');
+      resultDiv.innerHTML = '<p>Testing full AI flow...</p>';
+
+      try {
+        let aiAPI = null;
+
+        if (window.ai?.languageModel) {
+          aiAPI = window.ai.languageModel;
+          console.log('Using window.ai.languageModel');
+        } else if (self.ai?.languageModel) {
+          aiAPI = self.ai.languageModel;
+          console.log('Using self.ai.languageModel');
+        } else if (typeof ai !== 'undefined' && ai.languageModel) {
+          aiAPI = ai.languageModel;
+          console.log('Using global ai.languageModel');
+        }
+
+        if (!aiAPI) {
+          throw new Error('No AI API available');
+        }
+
+        // Check capabilities
+        const capabilities = await aiAPI.capabilities();
+        console.log('Capabilities:', capabilities);
+
+        if (capabilities.available === 'no') {
+          throw new Error('AI is not available on this device');
+        }
+
+        // Create session
+        const session = await aiAPI.create({
+          temperature: 0.5,
+          topK: 3
+        });
+
+        console.log('Session created:', session);
+
+        // Send prompt
+        const prompt = 'Say "Hello from Gemini Nano!" in exactly those words.';
+        const response = await session.prompt(prompt);
+
+        console.log('AI Response:', response);
+
+        resultDiv.innerHTML = `
+          <div class="status success">✓ Complete AI flow successful!</div>
+          <p><strong>Prompt:</strong> ${prompt}</p>
+          <p><strong>Response:</strong></p>
+          <pre>${response}</pre>
+        `;
+
+        session.destroy();
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <div class="status error">✗ Error: ${error.message}</div>
+          <pre>${error.stack}</pre>
+          <p style="margin-top: 16px;"><strong>Troubleshooting:</strong></p>
+          <ul style="line-height: 1.8;">
+            <li>Check chrome://flags are enabled</li>
+            <li>Restart Chrome completely</li>
+            <li>Check chrome://components model is downloaded</li>
+            <li>Try Chrome Canary if on stable Chrome</li>
+          </ul>
+        `;
+      }
+    }
+
+    // Run initial checks on page load
+    window.addEventListener('load', () => {
+      checkBrowserInfo();
+      checkAPIAvailability();
+    });
+  </script>
+</body>
+</html>

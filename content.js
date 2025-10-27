@@ -1505,6 +1505,30 @@
           ${aiResult.overallInsight}
           ${aiResult.patternInsight ? `<br><br>${aiResult.patternInsight}` : ""}
         </div>
+
+        <!-- HIDDEN FOR CHROME AI CHALLENGE - Future Enhancement
+        <div class="feedback-section" style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+          <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Was this helpful?</p>
+          <div class="feedback-buttons" style="display: flex; gap: 12px; align-items: center;">
+            <button class="feedback-btn feedback-thumbs-up" data-feedback="helpful" style="display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s;">
+              \u{1F44D} Helpful
+            </button>
+            <button class="feedback-btn feedback-thumbs-down" data-feedback="not-helpful" style="display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s;">
+              \u{1F44E} Not Helpful
+            </button>
+          </div>
+          <div class="feedback-comment-box" style="display: none; margin-top: 12px;">
+            <textarea
+              class="feedback-comment-input"
+              placeholder="What could be better? (optional)"
+              style="width: 100%; min-height: 60px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical;"
+            ></textarea>
+            <button class="feedback-submit-btn" style="margin-top: 8px; padding: 8px 16px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+              Submit Feedback
+            </button>
+          </div>
+        </div>
+        /HIDDEN -->
       </div>
 
       ${aiResult.futureOpportunity ? `

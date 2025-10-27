@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Test Piggy Bong Background</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    button {
+      background: #5D2CEE;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      margin: 10px 5px;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Test Piggy Bong Background Script</h1>
+
+  <button onclick="testAI()">Send AI Test Message</button>
+
+  <h3>Result:</h3>
+  <pre id="result">Click button to test...</pre>
+
+  <script>
+    async function testAI() {
+      const resultEl = document.getElementById('result');
+      resultEl.textContent = 'Sending message to background script...';
+
+      try {
+        const response = await chrome.runtime.sendMessage('oojajkppidiekojjkgopalemnancldgb', {
+          action: "analyzeWithAI",
+          data: {
+            items: [
+              { name: "NewJeans Album", price: 20 },
+              { name: "Stray Kids Lightstick", price: 50 }
+            ],
+            userGroups: ["NewJeans", "Stray Kids"],
+            priorityTypes: ["album", "lightstick"],
+            patterns: null
+          }
+        });
+
+        resultEl.textContent = JSON.stringify(response, null, 2);
+        console.log('Response:', response);
+      } catch (error) {
+        resultEl.textContent = 'Error: ' + error.message;
+        console.error('Error:', error);
+      }
+    }
+  </script>
+</body>
+</html>

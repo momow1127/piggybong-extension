@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git add -A)",
       "Bash(git commit -m \"$(cat <<''EOF''\nAdd visual drag handle/grabber to floating button\n\nFeature: Drag Handle Indicator\n- Added 6-dot grabber pattern on left side of button\n- Similar to JobRight and other draggable extensions\n- Shows on hover to indicate button is draggable\n\nVisual Design:\n- Pattern: 6 white dots (2 columns × 3 rows)\n- Using radial-gradient for clean dot pattern\n- Semi-transparent white: rgba(255, 255, 255, 0.7)\n- Size: 12px wide × 18px tall\n\nUX Behavior:\n- Hidden by default (opacity: 0)\n- Appears on hover (opacity: 1)\n- Cursor changes: grab → grabbing when dragging\n- Smooth fade transition (0.2s)\n\nLayout:\n- Positioned on far left of button\n- Order: [Drag Handle] [🐷 Logo] [Text]\n- Gap: 8px between elements\n- Left padding adjusted to fit handle\n\nThis makes it visually obvious that users can reposition the button!\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push origin main)"
+      "Bash(git push origin main)",
+      "Bash(open:*)"
     ],
     "deny": [],
     "ask": []

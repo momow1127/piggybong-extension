@@ -735,6 +735,30 @@ async function runAIAnalysis(pageText, pageUrl, productInfo, isDemo = false) {
           ${aiResult.overallInsight}
           ${aiResult.patternInsight ? `<br><br>${aiResult.patternInsight}` : ''}
         </div>
+
+        <!-- HIDDEN FOR CHROME AI CHALLENGE - Future Enhancement
+        <div class="feedback-section" style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+          <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Was this helpful?</p>
+          <div class="feedback-buttons" style="display: flex; gap: 12px; align-items: center;">
+            <button class="feedback-btn feedback-thumbs-up" data-feedback="helpful" style="display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s;">
+              👍 Helpful
+            </button>
+            <button class="feedback-btn feedback-thumbs-down" data-feedback="not-helpful" style="display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s;">
+              👎 Not Helpful
+            </button>
+          </div>
+          <div class="feedback-comment-box" style="display: none; margin-top: 12px;">
+            <textarea
+              class="feedback-comment-input"
+              placeholder="What could be better? (optional)"
+              style="width: 100%; min-height: 60px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical;"
+            ></textarea>
+            <button class="feedback-submit-btn" style="margin-top: 8px; padding: 8px 16px; background: linear-gradient(135deg, #5D2CEE 0%, #8B55ED 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+              Submit Feedback
+            </button>
+          </div>
+        </div>
+        /HIDDEN -->
       </div>
 
       ${aiResult.futureOpportunity ? `
@@ -804,10 +828,120 @@ async function runAIAnalysis(pageText, pageUrl, productInfo, isDemo = false) {
         });
       });
     }
+
+    // ============================================
+    // Feedback System - HIDDEN FOR CHROME AI CHALLENGE
+    // ============================================
+    // setupFeedbackHandlers(modalBody, aiResult); // FUTURE ENHANCEMENT
+
   } catch (error) {
     console.error('🐷 ❌ AI analysis failed:', error);
     console.error('🐷 Error details:', error.message);
     console.error('🐷 Error stack:', error.stack);
     showFallback(modalBody);
   }
+}
+
+// ============================================
+// Feedback System Functions
+// ============================================
+
+function setupFeedbackHandlers(modalBody, aiResult) {
+  const thumbsUpBtn = modalBody.querySelector('.feedback-thumbs-up');
+  const thumbsDownBtn = modalBody.querySelector('.feedback-thumbs-down');
+  const commentBox = modalBody.querySelector('.feedback-comment-box');
+  const commentInput = modalBody.querySelector('.feedback-comment-input');
+  const submitBtn = modalBody.querySelector('.feedback-submit-btn');
+
+  if (!thumbsUpBtn || !thumbsDownBtn) return;
+
+  // Thumbs Up - Direct submission
+  thumbsUpBtn.addEventListener('click', () => {
+    saveFeedback('helpful', '', aiResult);
+    showToast('Thank you for your feedback! 🎉');
+    disableFeedbackButtons(modalBody);
+  });
+
+  // Thumbs Down - Show comment box
+  thumbsDownBtn.addEventListener('click', () => {
+    commentBox.style.display = 'block';
+    commentInput.focus();
+  });
+
+  // Submit feedback with comment
+  submitBtn.addEventListener('click', () => {
+    const comment = commentInput.value.trim();
+    saveFeedback('not-helpful', comment, aiResult);
+    showToast('Thank you for your feedback! 🙏');
+    disableFeedbackButtons(modalBody);
+    commentBox.style.display = 'none';
+  });
+}
+
+function saveFeedback(feedbackType, comment, aiResult) {
+  const feedback = {
+    timestamp: new Date().toISOString(),
+    feedbackType, // 'helpful' or 'not-helpful'
+    comment,
+    userLineup: PersonalizationHelper.getLineup(),
+    userPriority: PersonalizationHelper.getPriority(),
+    itemCount: aiResult.items?.length || 0,
+    badgeDistribution: getBadgeDistribution(aiResult.items),
+    overallInsight: aiResult.overallInsight,
+    hasSmartFanTip: !!aiResult.futureOpportunity
+  };
+
+  // Store in localStorage
+  const existingFeedback = JSON.parse(localStorage.getItem('piggyFeedback') || '[]');
+  existingFeedback.push(feedback);
+  localStorage.setItem('piggyFeedback', JSON.stringify(existingFeedback));
+
+  console.log('🐷 Feedback saved:', feedback);
+}
+
+function getBadgeDistribution(items) {
+  if (!items) return {};
+  return items.reduce((acc, item) => {
+    acc[item.priority] = (acc[item.priority] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function showToast(message) {
+  // Create toast notification
+  const toast = document.createElement('div');
+  toast.className = 'piggy-feedback-toast';
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4CAF50;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 10000001;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    animation: slideDown 0.3s ease;
+  `;
+
+  document.body.appendChild(toast);
+
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    toast.style.animation = 'slideUp 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+function disableFeedbackButtons(modalBody) {
+  const buttons = modalBody.querySelectorAll('.feedback-btn');
+  buttons.forEach(btn => {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+  });
 }

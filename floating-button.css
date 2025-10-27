@@ -1300,3 +1300,37 @@ span[style*="padding: 4px 12px"] {
   }
 }
 
+
+/* Toast animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+}
+
+/* Feedback button hover effects */
+.feedback-btn:hover {
+  background: #e8e8e8 !important;
+  border-color: #ccc !important;
+  transform: translateY(-1px) !important;
+}
+
+.feedback-btn:active {
+  transform: translateY(0) !important;
+}
