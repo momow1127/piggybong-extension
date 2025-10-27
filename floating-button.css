@@ -865,13 +865,13 @@
 /* Update Lineup Button - Green to match Smart Fan Tip theme */
 .update-lineup-btn {
   display: inline-block !important;
-  padding: 10px 20px !important;
+  padding: 6px 14px !important;
   background: linear-gradient(135deg, #00897B 0%, #4CAF50 100%) !important;
   color: white !important;
   border: none !important;
-  border-radius: 20px !important; /* Fully rounded pill shape */
+  border-radius: 16px !important; /* Fully rounded pill shape */
   font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, ui-rounded, "Segoe UI", Roboto, sans-serif !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
