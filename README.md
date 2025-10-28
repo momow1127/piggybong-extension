@@ -16,25 +16,34 @@ K-pop fans face a unique challenge: **FOMO-driven impulse buying**. With constan
 
 ## ✨ Features
 
-### 🤖 AI-Powered Priority Assessment
+### 🎯 Personalized Lineup Setup
+- Set your favorite K-pop groups (NewJeans, BLACKPINK, SHINee, etc.)
+- Choose priority item types (Albums, Photocards, Lightsticks, etc.)
+- One-time setup with easy editing anytime
+
+### 🤖 AI-Powered Cart Analysis
 - Uses **Chrome's Prompt API** with Gemini Nano for on-device, privacy-safe analysis
-- Evaluates purchases on a 0-100 scale: Collection Goal → FOMO Buy
-- Provides transparent reasoning explaining the priority score
+- Matches each cart item to YOUR specific preferences
+- Generates personalized insights and recommendations
 
-### 📊 Visual Priority Meter
-- Phia-style visual meter showing where purchases fall on the FOMO spectrum
-- Color-coded badges (green/yellow/red) for quick assessment
-- Clear "Why This Score?" explanation for transparency
+### 🏷️ Priority Badges
+Each item receives one of four badges based on YOUR collection:
+- **Top Priority** - Matches your lineup AND priority types (buy this first!)
+- **Core Lineup** - Your favorite groups, different item type
+- **Discovery** - Your preferred items, exploring new groups
+- **Multi-Stan** - Broadening your collection beyond usual favorites
 
-### 💭 Supportive Guidance
-- Warm, non-judgmental reflections tailored to K-pop collecting culture
-- Avoids financial shame language (no "budget," "expensive," "afford")
-- Uses collection-positive terms: "priority," "collection goals," "must-haves"
+### 💡 Smart Fan Tip
+- AI learns from your shopping behavior across multiple carts
+- Detects patterns (e.g., "You added Super Junior 8 times but they're not in your lineup")
+- Suggests updating preferences when behavior doesn't match stated lineup
+- Helps keep your collection goals aligned with actual shopping habits
 
 ### 🎨 Non-Disruptive UX
 - Context-aware: Only appears on K-pop shopping sites
-- Compact top-right panel (doesn't block checkout pages)
-- Floating "Should I Buy This?" button with Piggy Bong branding
+- Floating button in bottom-right corner
+- Slide-in modal from right side (doesn't block checkout)
+- Edit preferences anytime with settings gear icon
 
 ---
 
@@ -84,7 +93,7 @@ We use the **Prompt API** (LanguageModel API) because our use case requires:
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/YOUR-USERNAME/piggybong-extension.git
+   git clone https://github.com/momow1127/piggybong-extension.git
    cd piggybong-extension
    ```
 
